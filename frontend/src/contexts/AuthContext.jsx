@@ -11,6 +11,19 @@ const client = axios.create({
     baseURL: `${server}/api/v1/users`
 })
 
+const getProfilePhotoKey = (username) => `profilePhoto:${username}`;
+const CURRENT_PROFILE_PHOTO_KEY = "profilePhoto:current";
+
+const mergeLocalProfilePhoto = (profile) => {
+    if (!profile?.username) return profile;
+
+    const localPhoto = localStorage.getItem(getProfilePhotoKey(profile.username)) || localStorage.getItem(CURRENT_PROFILE_PHOTO_KEY);
+    if (!profile.profilePhoto && localPhoto) {
+        return { ...profile, profilePhoto: localPhoto };
+    }
+
+    return profile;
+}
 
 export const AuthProvider = ({ children }) => {
 
@@ -41,8 +54,9 @@ export const AuthProvider = ({ children }) => {
                     token: localStorage.getItem("token")
                 }
             });
-            setUserData(request.data);
-            return request.data;
+            const profile = mergeLocalProfilePhoto(request.data);
+            setUserData(profile);
+            return profile;
         } catch (err) {
             throw err;
         }
@@ -55,7 +69,19 @@ export const AuthProvider = ({ children }) => {
                 ...profileData
             });
             if (request.status === httpStatus.OK) {
-                setUserData(request.data.profile);
+                if (profileData.profilePhoto !== undefined && request.data.profile?.username) {
+                    if (profileData.profilePhoto) {
+                        localStorage.setItem(getProfilePhotoKey(request.data.profile.username), profileData.profilePhoto);
+                        localStorage.setItem(CURRENT_PROFILE_PHOTO_KEY, profileData.profilePhoto);
+                    } else {
+                        localStorage.removeItem(getProfilePhotoKey(request.data.profile.username));
+                        localStorage.removeItem(CURRENT_PROFILE_PHOTO_KEY);
+                    }
+                }
+                setUserData(mergeLocalProfilePhoto({
+                    ...request.data.profile,
+                    profilePhoto: request.data.profile?.profilePhoto || profileData.profilePhoto || ""
+                }));
             }
             return request.data;
         } catch (err) {

@@ -9,6 +9,7 @@ import History from './pages/history';
 import Profile from './pages/profile';
 import Lobby from './pages/lobby';
 import JoinMeeting from './pages/joinmeeting';
+import ScheduleMeeting from './pages/scheduleMeeting';
 
 function App() {
   return (
@@ -20,10 +21,11 @@ function App() {
             <Route path='/auth' element={<Authentication />} />
             <Route path='/lobby' element={<Lobby />} />
             <Route path='/join' element={<JoinMeeting />} />
+            <Route path='/schedule' element={<ScheduleMeeting />} />
             <Route path='/home' element={<HomeComponent />} />
             <Route path='/history' element={<History />} />
             <Route path='/profile' element={<Profile />} />
-            <Route path='/:url' element={<VideoMeetComponent />} />
+            <Route path='/meeting/:url' element={<VideoMeetComponent />} />
           </Routes>
         </AuthProvider>
       </Router>
@@ -32,7 +34,5 @@ function App() {
 }
 
 export default App;
-
-
 
 

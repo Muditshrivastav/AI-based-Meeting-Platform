@@ -7,7 +7,7 @@ export default function LandingPage() {
     const router = useNavigate();
 
     return (
-        <div className='landingPageContainer'>
+        <div className='landingPageContainer' style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/background.png)` }}>
             <nav>
                 <div className='navHeader'>
                     <h2>Web-RTC</h2>

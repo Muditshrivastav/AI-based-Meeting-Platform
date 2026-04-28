@@ -4,6 +4,7 @@ import bcrypt, { hash } from "bcrypt"
 
 import crypto from "crypto"
 import { Meeting } from "../models/meeting.model.js";
+import { ScheduledMeeting } from "../models/scheduledMeeting.model.js";
 const login = async (req, res) => {
 
     const { username, password } = req.body;
@@ -109,7 +110,8 @@ const getUserProfile = async (req, res) => {
         return res.status(httpStatus.OK).json({
             name: user.name,
             username: user.username,
-            about: user.about
+            about: user.about,
+            profilePhoto: user.profilePhoto
         })
     } catch (e) {
         return res.status(500).json({ message: `Something went wrong ${e}` })
@@ -117,7 +119,7 @@ const getUserProfile = async (req, res) => {
 }
 
 const updateUserProfile = async (req, res) => {
-    const { token, name, about } = req.body;
+    const { token, name, about, profilePhoto } = req.body;
 
     try {
         const user = await User.findOne({ token });
@@ -127,13 +129,84 @@ const updateUserProfile = async (req, res) => {
 
         if (name !== undefined) user.name = name;
         if (about !== undefined) user.about = about;
+        if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
 
         await user.save();
 
-        return res.status(httpStatus.OK).json({ message: "Profile updated", profile: { name: user.name, username: user.username, about: user.about }})
+        return res.status(httpStatus.OK).json({
+            message: "Profile updated",
+            profile: {
+                name: user.name,
+                username: user.username,
+                about: user.about,
+                profilePhoto: user.profilePhoto
+            }
+        })
     } catch (e) {
         return res.status(500).json({ message: `Something went wrong ${e}` })
     }
 }
 
-export { login, register, getUserHistory, addToHistory, getUserProfile, updateUserProfile }
+const scheduleMeeting = async (req, res) => {
+    const { token, meetingCode, topic, guestEmail, scheduledAt } = req.body;
+
+    if (!meetingCode || !scheduledAt) {
+        return res.status(httpStatus.BAD_REQUEST).json({ message: "Meeting code and scheduled time are required" });
+    }
+
+    const scheduledDate = new Date(scheduledAt);
+    if (Number.isNaN(scheduledDate.getTime())) {
+        return res.status(httpStatus.BAD_REQUEST).json({ message: "Invalid scheduled time" });
+    }
+
+    try {
+        const user = token ? await User.findOne({ token }) : null;
+
+        const scheduledMeeting = await ScheduledMeeting.findOneAndUpdate(
+            { meetingCode },
+            {
+                meetingCode,
+                topic: topic || "MeetSpace meeting",
+                guestEmail: guestEmail || "",
+                scheduledAt: scheduledDate,
+                createdBy: user?.username || ""
+            },
+            { new: true, upsert: true, runValidators: true }
+        );
+
+        return res.status(httpStatus.OK).json({
+            message: "Meeting scheduled",
+            meeting: scheduledMeeting
+        });
+    } catch (e) {
+        return res.status(500).json({ message: `Something went wrong ${e}` });
+    }
+}
+
+const checkMeetingAccess = async (req, res) => {
+    const { meetingCode } = req.params;
+
+    try {
+        const scheduledMeeting = await ScheduledMeeting.findOne({ meetingCode });
+        if (!scheduledMeeting) {
+            return res.status(httpStatus.OK).json({ allowed: true, scheduled: false });
+        }
+
+        const now = new Date();
+        const allowed = now >= scheduledMeeting.scheduledAt;
+
+        return res.status(httpStatus.OK).json({
+            allowed,
+            scheduled: true,
+            topic: scheduledMeeting.topic,
+            scheduledAt: scheduledMeeting.scheduledAt,
+            message: allowed
+                ? "Meeting is open"
+                : "This meeting is not open yet"
+        });
+    } catch (e) {
+        return res.status(500).json({ message: `Something went wrong ${e}` });
+    }
+}
+
+export { login, register, getUserHistory, addToHistory, getUserProfile, updateUserProfile, scheduleMeeting, checkMeetingAccess }

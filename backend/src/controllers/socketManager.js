@@ -6,9 +6,14 @@ let messages = {}
 let timeOnline = {}
 
 export const connectToSocket = (server) => {
+    const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+
     const io = new Server(server, {
         cors: {
-            origin: "*",
+            origin: allowedOrigins,
             methods: ["GET", "POST"],
             allowedHeaders: ["*"],
             credentials: true
@@ -25,7 +30,9 @@ export const connectToSocket = (server) => {
             if (connections[path] === undefined) {
                 connections[path] = []
             }
-            connections[path].push(socket.id)
+            if (!connections[path].includes(socket.id)) {
+                connections[path].push(socket.id)
+            }
 
             timeOnline[socket.id] = new Date();
 
@@ -72,7 +79,7 @@ export const connectToSocket = (server) => {
                 messages[matchingRoom].push({ 'sender': sender, "data": data, "socket-id-sender": socket.id })
                 console.log("message", matchingRoom, ":", sender, data)
 
-                connections[matchingRoom].forEach((elem) => {
+                new Set(connections[matchingRoom]).forEach((elem) => {
                     io.to(elem).emit("chat-message", data, sender, socket.id)
                 })
             }
@@ -117,4 +124,3 @@ export const connectToSocket = (server) => {
 
     return io;
 }
-
