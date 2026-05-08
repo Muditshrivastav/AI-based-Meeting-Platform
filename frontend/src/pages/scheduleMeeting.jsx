@@ -4,6 +4,7 @@ import { Alert, Avatar, Box, Button, Chip, Divider, Paper, Stack, TextField, Typ
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import EmailIcon from '@mui/icons-material/Email';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import VideoCallIcon from '@mui/icons-material/VideoCall';
 import { AuthContext } from '../contexts/AuthContext';
@@ -24,6 +25,7 @@ export default function ScheduleMeeting() {
     const navigate = useNavigate();
     const { userData } = useContext(AuthContext);
     const [guestEmail, setGuestEmail] = useState('');
+    const [guestPhone, setGuestPhone] = useState('');
     const [topic, setTopic] = useState('MeetSpace meeting');
     const [date, setDate] = useState(getToday());
     const [time, setTime] = useState('');
@@ -45,6 +47,7 @@ export default function ScheduleMeeting() {
         const scheduledAtIso = new Date(`${date}T${time}`).toISOString();
         const schedule = {
             guestEmail,
+            guestPhone,
             topic,
             date,
             time,
@@ -85,6 +88,7 @@ export default function ScheduleMeeting() {
                     meetingCode,
                     topic,
                     guestEmail,
+                    guestPhone,
                     scheduledAt: schedule.scheduledAt
                 })
             });
@@ -115,6 +119,65 @@ export default function ScheduleMeeting() {
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(guestEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.open(gmailUrl, '_blank', 'noopener,noreferrer');
         setMessage('Schedule saved. Gmail compose opened with the invite ready to send.');
+    };
+
+    const handleWhatsAppInvite = async () => {
+        setError('');
+        setMessage('');
+
+        if (!guestPhone.trim()) {
+            setError('Please enter the guest WhatsApp number.');
+            return;
+        }
+
+        if (!date || !time) {
+            setError('Please select a meeting date and time.');
+            return;
+        }
+
+        const schedule = saveSchedule();
+
+        try {
+            const response = await fetch(`${server}/api/v1/users/schedule_meeting`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: localStorage.getItem('token'),
+                    meetingCode,
+                    topic,
+                    guestEmail,
+                    guestPhone,
+                    scheduledAt: schedule.scheduledAt
+                })
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || 'Unable to save schedule on server');
+            }
+        } catch (err) {
+            setError('Could not save this schedule on the server. Please try again before sending the invite.');
+            return;
+        }
+
+        const text = [
+            `Hello! 👋`,
+            ``,
+            `*${userData?.name || 'The host'}* has scheduled a MeetSpace meeting with you.`,
+            ``,
+            `*Topic:* ${topic || 'MeetSpace meeting'}`,
+            `*Date & Time:* ${scheduledAt}`,
+            `*Meeting Code:* ${meetingCode}`,
+            ``,
+            `*Click here to join:*`,
+            `${meetingLink}`,
+            ``,
+            `Alternatively, open the app and enter the code: *${meetingCode}*`
+        ].join('\n');
+
+        const whatsappUrl = `https://wa.me/${guestPhone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        setMessage('Schedule saved. WhatsApp chat opened with the invite ready to send.');
     };
 
     const copyInvite = async () => {
@@ -172,10 +235,10 @@ export default function ScheduleMeeting() {
                             </Avatar>
                             <Box>
                                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                                    Gmail invite
+                                    Invite Guest
                                 </Typography>
                                 <Typography sx={{ color: '#5f6368' }}>
-                                    Fill the details and send the invite from Gmail.
+                                    Fill the details and send the invite via Gmail or WhatsApp.
                                 </Typography>
                             </Box>
                         </Stack>
@@ -183,7 +246,10 @@ export default function ScheduleMeeting() {
 
                     <Box sx={{ p: { xs: 3, md: 4 } }}>
                         <Stack spacing={2.2}>
-                            <TextField label="Guest Gmail address" type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value.trim())} fullWidth />
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                <TextField label="Guest Gmail address" type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value.trim())} fullWidth />
+                                <TextField label="Guest WhatsApp number" placeholder="e.g. 919876543210" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.trim())} fullWidth />
+                            </Stack>
                             <TextField label="Meeting topic" value={topic} onChange={(e) => setTopic(e.target.value)} fullWidth />
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                                 <TextField label="Meeting date" type="date" value={date} onChange={(e) => setDate(e.target.value)} inputProps={{ min: getToday() }} InputLabelProps={{ shrink: true }} fullWidth />
@@ -197,10 +263,10 @@ export default function ScheduleMeeting() {
 
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 3 }}>
                             <Button variant="contained" size="large" startIcon={<EmailIcon />} onClick={handleSchedule} sx={{ borderRadius: 2, px: 3, py: 1.2, bgcolor: '#1a73e8', textTransform: 'none', fontWeight: 700, boxShadow: 'none', '&:hover': { bgcolor: '#1558b0' } }}>
-                                Schedule and open Gmail
+                                Invite via Gmail
                             </Button>
-                            <Button variant="outlined" size="large" startIcon={<VideoCallIcon />} onClick={() => navigate(`/meeting/${meetingCode}`)} sx={{ borderRadius: 2, px: 3, py: 1.2, textTransform: 'none', fontWeight: 700 }}>
-                                Test link
+                            <Button variant="contained" size="large" startIcon={<WhatsAppIcon />} onClick={handleWhatsAppInvite} sx={{ borderRadius: 2, px: 3, py: 1.2, bgcolor: '#25d366', textTransform: 'none', fontWeight: 700, boxShadow: 'none', '&:hover': { bgcolor: '#128c7e' } }}>
+                                Invite via WhatsApp
                             </Button>
                         </Stack>
 
@@ -212,7 +278,8 @@ export default function ScheduleMeeting() {
                                     {scheduledMeetings.map((meeting) => (
                                         <Box key={`${meeting.meetingCode}-${meeting.createdAt}`} sx={{ border: '1px solid #e8eaed', borderRadius: 2, p: 1.5 }}>
                                             <Typography sx={{ fontWeight: 700 }}>{meeting.topic}</Typography>
-                                            <Typography variant="body2" sx={{ color: '#5f6368' }}>{formatDateTime(meeting.date, meeting.time)} • {meeting.guestEmail}</Typography>
+                                            <Typography variant="body2" sx={{ color: '#5f6368' }}>{formatDateTime(meeting.date, meeting.time)}</Typography>
+                                            <Typography variant="body2" sx={{ color: '#5f6368' }}>{meeting.guestEmail || meeting.guestPhone}</Typography>
                                             <Typography variant="body2" sx={{ color: '#1a73e8', fontWeight: 700 }}>{meeting.meetingCode}</Typography>
                                         </Box>
                                     ))}
