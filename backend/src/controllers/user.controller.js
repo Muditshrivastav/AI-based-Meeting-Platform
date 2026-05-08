@@ -80,14 +80,15 @@ const getUserHistory = async (req, res) => {
 }
 
 const addToHistory = async (req, res) => {
-    const { token, meeting_code } = req.body;
+    const { token, meeting_code, summary } = req.body;
 
     try {
         const user = await User.findOne({ token: token });
 
         const newMeeting = new Meeting({
             user_id: user.username,
-            meetingCode: meeting_code
+            meetingCode: meeting_code,
+            summary: summary
         })
 
         await newMeeting.save();
@@ -148,7 +149,7 @@ const updateUserProfile = async (req, res) => {
 }
 
 const scheduleMeeting = async (req, res) => {
-    const { token, meetingCode, topic, guestEmail, scheduledAt } = req.body;
+    const { token, meetingCode, topic, guestEmail, guestPhone, scheduledAt } = req.body;
 
     if (!meetingCode || !scheduledAt) {
         return res.status(httpStatus.BAD_REQUEST).json({ message: "Meeting code and scheduled time are required" });
@@ -168,6 +169,7 @@ const scheduleMeeting = async (req, res) => {
                 meetingCode,
                 topic: topic || "MeetSpace meeting",
                 guestEmail: guestEmail || "",
+                guestPhone: guestPhone || "",
                 scheduledAt: scheduledDate,
                 createdBy: user?.username || ""
             },
