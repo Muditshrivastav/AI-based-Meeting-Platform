@@ -86,6 +86,24 @@ export const connectToSocket = (server) => {
 
         })
 
+        socket.on("transcription-chunk", (data, sender) => {
+            const [matchingRoom, found] = Object.entries(connections)
+                .reduce(([room, isFound], [roomKey, roomValue]) => {
+                    if (!isFound && roomValue.includes(socket.id)) {
+                        return [roomKey, true];
+                    }
+                    return [room, isFound];
+                }, ['', false]);
+
+            if (found === true) {
+                new Set(connections[matchingRoom]).forEach((elem) => {
+                    if (elem !== socket.id) { // Don't send back to self
+                        io.to(elem).emit("transcription-chunk", data, sender, socket.id)
+                    }
+                })
+            }
+        })
+
         socket.on("disconnect", () => {
 
             var diffTime = Math.abs(timeOnline[socket.id] - new Date())
