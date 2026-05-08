@@ -1,0 +1,24 @@
+(node:2052) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Error: Not allowed by CORS
+    at origin (file:///D:/Machine%20Learning/AI_based_meeting_platform/Minor%20Project%20zip/Minor%20Project/backend/src/app.js:28:25)
+    at D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\cors\lib\index.js:204:7)
+    at Layer.handle [as handle_request] (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:328:13)
+    at D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:286:9
+    at router.process_params (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:280:10)
+    at expressInit (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\middleware\init.js:40:5)
+Error: Not allowed by CORS
+    at origin (file:///D:/Machine%20Learning/AI_based_meeting_platform/Minor%20Project%20zip/Minor%20Project/backend/src/app.js:28:25)
+    at D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\cors\lib\index.js:204:7)
+    at Layer.handle [as handle_request] (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:328:13)
+    at D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:286:9
+    at router.process_params (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\router\index.js:280:10)
+    at expressInit (D:\Machine Learning\AI_based_meeting_platform\Minor Project zip\Minor Project\backend\node_modules\express\lib\middleware\init.js:40:5)

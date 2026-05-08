@@ -10,6 +10,7 @@ import Profile from './pages/profile';
 import Lobby from './pages/lobby';
 import JoinMeeting from './pages/joinmeeting';
 import ScheduleMeeting from './pages/scheduleMeeting';
+import MeetingNotes from './pages/meetingNotes';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path='/home' element={<HomeComponent />} />
             <Route path='/history' element={<History />} />
             <Route path='/profile' element={<Profile />} />
+            <Route path='/notes' element={<MeetingNotes />} />
             <Route path='/meeting/:url' element={<VideoMeetComponent />} />
           </Routes>
         </AuthProvider>

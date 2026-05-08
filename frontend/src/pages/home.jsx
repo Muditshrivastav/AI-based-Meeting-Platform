@@ -10,6 +10,7 @@ import KeyboardIcon from '@mui/icons-material/Keyboard';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { AuthContext } from '../contexts/AuthContext';
 
 function HomeComponent() {
@@ -19,19 +20,19 @@ function HomeComponent() {
     const previewParticipants = [
         {
             name: 'You',
-            photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80'
+            photo: '/avatars/you.png'
         },
         {
             name: 'Asha',
-            photo: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=600&q=80'
+            photo: '/avatars/asha.png'
         },
         {
             name: 'Rohan',
-            photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80'
+            photo: '/avatars/rohan.png'
         },
         {
             name: 'Team',
-            photo: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80'
+            photo: '/avatars/team.png'
         }
     ];
 
@@ -70,6 +71,9 @@ function HomeComponent() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Button startIcon={<HomeIcon />} onClick={() => navigate('/home')}>
                         Home
+                    </Button>
+                    <Button startIcon={<DescriptionIcon />} onClick={() => navigate('/notes')}>
+                        Notes
                     </Button>
                     <Button startIcon={<AccountCircleIcon />} onClick={() => navigate('/profile')}>
                         Profile

@@ -12,6 +12,8 @@ import MicOffIcon from '@mui/icons-material/MicOff'
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
 import ChatIcon from '@mui/icons-material/Chat'
+import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
+import ClosedCaptionOffIcon from '@mui/icons-material/ClosedCaptionDisabled';
 import server from '../environment';
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -61,10 +63,17 @@ export default function VideoMeetComponent() {
     let [newMessages, setNewMessages] = useState(0);
 
     let [username, setUsername] = useState("Guest");
-
     const videoRef = useRef([])
-
     let [videos, setVideos] = useState([])
+
+    // Transcription state
+    const [transcript, setTranscript] = useState([]);
+    const [recognition, setRecognition] = useState(null);
+    const [isTranscribing, setIsTranscribing] = useState(false);
+    const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
+    const [finalSummary, setFinalSummary] = useState(null);
+    const [showSummary, setShowSummary] = useState(false);
+    const transcriptEndRef = useRef(null);
 
     // TODO
     // if(isChrome() === false) {
@@ -107,6 +116,7 @@ export default function VideoMeetComponent() {
             if (socketRef.current) {
                 socketRef.current.off('signal', gotMessageFromServer);
                 socketRef.current.off('chat-message', addMessage);
+                socketRef.current.off('transcription-chunk', addTranscription);
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
@@ -120,6 +130,15 @@ export default function VideoMeetComponent() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    useEffect(() => {
+        if (audio && transcriptionEnabled && !isTranscribing && socketRef.current) {
+            startTranscription();
+        } else if ((!audio || !transcriptionEnabled) && isTranscribing) {
+            if (recognition) recognition.stop();
+            setIsTranscribing(false);
+        }
+    }, [audio, transcriptionEnabled, isTranscribing, socketRef.current]);
 
     const checkScheduledMeetingAccess = async () => {
         const localSchedule = getLocalScheduledMeeting();
@@ -253,10 +272,76 @@ export default function VideoMeetComponent() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: videoOn, audio: audioOn });
             getUserMediaSuccess(stream);
+            if (audioOn) {
+                startTranscription();
+            }
         } catch (e) {
             console.log('getMedia error', e);
         }
     }
+
+    const startTranscription = () => {
+        if (isTranscribing) return; // Prevent double start
+        
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            console.log("Speech recognition not supported");
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recog = new SpeechRecognition();
+        recog.continuous = true;
+        recog.interimResults = true;
+        recog.lang = 'en-US';
+
+        recog.onresult = (event) => {
+            let finalChunk = '';
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalChunk += event.results[i][0].transcript;
+                }
+            }
+
+            if (finalChunk.trim()) {
+                const currentUsername = usernameRef.current || "Guest";
+                addTranscription(finalChunk, currentUsername);
+                if (socketRef.current) {
+                    socketRef.current.emit('transcription-chunk', finalChunk, currentUsername);
+                }
+            }
+        };
+
+        recog.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+            if (event.error === 'no-speech') return;
+            setIsTranscribing(false);
+        };
+
+        recog.onend = () => {
+            setIsTranscribing(false);
+            // Auto-restart if audio and transcription are still enabled
+            if (audio && transcriptionEnabled) {
+                setTimeout(() => startTranscription(), 100);
+            }
+        };
+
+        setRecognition(recog);
+        try {
+            recog.start();
+            setIsTranscribing(true);
+            console.log("Transcription started");
+        } catch (e) {
+            console.error("Error starting recognition:", e);
+        }
+    };
+
+    const addTranscription = (data, sender) => {
+        setTranscript((prev) => [...prev, { sender, data, id: Date.now() }]);
+        if (transcriptEndRef.current) {
+            transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
 
 
@@ -409,6 +494,8 @@ export default function VideoMeetComponent() {
         })
 
         socketRef.current.on('signal', gotMessageFromServer)
+
+        socketRef.current.on('transcription-chunk', addTranscription)
 
         socketRef.current.on('connect', () => {
             socketRef.current.emit('join-call', window.location.href)
@@ -633,6 +720,10 @@ export default function VideoMeetComponent() {
                 if (window.localStream) {
                     window.localStream.getAudioTracks().forEach((track) => track.stop());
                 }
+                if (recognition) {
+                    recognition.stop();
+                    setIsTranscribing(false);
+                }
                 if (video) {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                     getUserMediaSuccess(stream);
@@ -662,8 +753,11 @@ export default function VideoMeetComponent() {
             tracks.forEach(track => track.stop())
         } catch (e) { }
 
-        const meetingText = messages.map((item) => `${item.sender}: ${item.data}`).join("\n");
-        if (meetingText) {
+        const chatText = messages.map((item) => `${item.sender}: ${item.data}`).join("\n");
+        const spokenText = transcript.map((item) => `${item.sender}: ${item.data}`).join("\n");
+        const meetingText = `Chat Messages:\n${chatText}\n\nTranscript:\n${spokenText}`;
+
+        if (chatText || spokenText) {
             try {
                 const response = await fetch(`${server_url}/api/v1/summarize`, {
                     method: "POST",
@@ -671,14 +765,33 @@ export default function VideoMeetComponent() {
                     body: JSON.stringify({ meetingText })
                 });
                 const data = await response.json();
-                alert(`Meeting summary:\n\n${data.summary || "No summary returned."}`);
+                setFinalSummary(data.summary || "No summary returned.");
+                setShowSummary(true);
+
+                // Save to history automatically
+                if (data.summary) {
+                    try {
+                        await fetch(`${server_url}/api/v1/users/add_to_history`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                token: localStorage.getItem("token"),
+                                meeting_code: meetingCode,
+                                summary: data.summary
+                            })
+                        });
+                    } catch (e) {
+                        console.log("Failed to save summary to history", e);
+                    }
+                }
             } catch (err) {
                 console.error(err);
-                alert("Failed to summarize the meeting. Please try again later.");
+                alert("Failed to summarize the meeting. Closing meeting.");
+                navigate("/lobby");
             }
+        } else {
+            navigate("/lobby");
         }
-
-        navigate("/lobby");
     }
 
 
@@ -835,6 +948,14 @@ export default function VideoMeetComponent() {
                             </IconButton>
                         </Badge>
 
+                        <IconButton 
+                            onClick={() => setTranscriptionEnabled(!transcriptionEnabled)} 
+                            className={`${styles.controlButton} ${transcriptionEnabled ? styles.activeControlButton : ''}`}
+                            title={transcriptionEnabled ? "Disable Transcription" : "Enable Transcription"}
+                        >
+                            {transcriptionEnabled ? <ClosedCaptionIcon /> : <ClosedCaptionOffIcon />}
+                        </IconButton>
+
                     </div>
 
 
@@ -868,6 +989,38 @@ export default function VideoMeetComponent() {
                         ))}
 
                     </div>
+
+                    {transcript.length > 0 && (
+                        <div className={styles.transcriptionOverlay}>
+                            {transcript.slice(-3).map((line) => (
+                                <div key={line.id} className={styles.transcriptionLine}>
+                                    <span className={styles.transcriptionSender}>{line.sender}:</span>
+                                    {line.data}
+                                </div>
+                            ))}
+                            <div ref={transcriptEndRef} />
+                        </div>
+                    )}
+
+                    {showSummary && (
+                        <div className={styles.summaryOverlay}>
+                            <div className={styles.summaryCard}>
+                                <h2>AI Meeting Notes</h2>
+                                <div className={styles.summaryContent}>
+                                    {finalSummary}
+                                </div>
+                                <div className={styles.summaryActions}>
+                                    <Button 
+                                        variant="contained" 
+                                        onClick={() => navigate("/lobby")}
+                                        sx={{ borderRadius: 999, px: 4, py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1.1rem' }}
+                                    >
+                                        Close and Exit
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                 </div>
 
