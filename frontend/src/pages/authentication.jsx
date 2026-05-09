@@ -7,15 +7,8 @@ import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
 import { Snackbar } from '@mui/material';
-
-
-
-// TODO remove, this demo shouldn't need to reset the theme.
-
-const defaultTheme = createTheme();
 
 export default function Authentication() {
 
@@ -60,10 +53,9 @@ export default function Authentication() {
 
 
     return (
-        <ThemeProvider theme={defaultTheme}>
-            <Grid container component="main" sx={{ minHeight: '100vh', backgroundImage: 'url(https://source.unsplash.com/random?wallpapers)', backgroundRepeat: 'no-repeat', backgroundSize: 'cover', backgroundPosition: 'center' }} alignItems="center" justifyContent="center">
-                <CssBaseline />
-                <Grid item xs={12} sm={10} md={8} lg={5} component={Paper} elevation={6} square container alignItems="center" justifyContent="center" sx={{ minHeight: '70vh' }}>
+        <React.Fragment>
+            <Grid container component="main" sx={{ minHeight: '100vh', bgcolor: 'transparent' }} alignItems="center" justifyContent="center">
+                <Grid item xs={12} sm={10} md={8} lg={5} component={Paper} elevation={6} square container alignItems="center" justifyContent="center" sx={{ minHeight: '70vh', bgcolor: 'background.paper' }}>
                     <Box
                         sx={{
                             width: '100%',
@@ -152,6 +144,6 @@ export default function Authentication() {
                 message={message}
             />
 
-        </ThemeProvider>
+        </React.Fragment>
     );
 }

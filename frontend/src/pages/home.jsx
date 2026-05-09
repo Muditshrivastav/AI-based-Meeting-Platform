@@ -11,11 +11,16 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import DescriptionIcon from '@mui/icons-material/Description';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { IconButton } from '@mui/material';
 import { AuthContext } from '../contexts/AuthContext';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 function HomeComponent() {
     const navigate = useNavigate();
     const { userData } = useContext(AuthContext);
+    const { mode, toggleTheme } = useContext(ThemeContext);
     const [meetingCode, setMeetingCode] = useState('');
     const previewParticipants = [
         {
@@ -58,10 +63,10 @@ function HomeComponent() {
     }
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: '#fff', color: '#202124' }}>
-            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: '1px solid #e8eaed', bgcolor: '#ffffff' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'transparent', color: 'text.primary' }}>
+            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ bgcolor: '#1a73e8', width: 40, height: 40 }}>
+                    <Avatar sx={{ bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)', color: mode === 'dark' ? '#ffffff' : '#000000', width: 40, height: 40 }}>
                         <VideoCallIcon />
                     </Avatar>
                     <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.02em' }}>
@@ -69,6 +74,9 @@ function HomeComponent() {
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton onClick={toggleTheme} color="inherit" sx={{ mr: 1 }}>
+                        {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                    </IconButton>
                     <Button startIcon={<HomeIcon />} onClick={() => navigate('/home')}>
                         Home
                     </Button>
@@ -86,11 +94,11 @@ function HomeComponent() {
 
             <Box sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2.5, md: 5 }, py: { xs: 6, md: 10 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 0.9fr' }, gap: { xs: 6, md: 8 }, alignItems: 'center' }}>
                 <Box>
-                    <Chip label={userData?.name ? `Welcome, ${userData.name}` : 'Secure video meetings'} sx={{ mb: 3, bgcolor: '#e8f0fe', color: '#1967d2', fontWeight: 600 }} />
+                    <Chip label={userData?.name ? `Welcome, ${userData.name}` : 'Secure video meetings'} sx={{ mb: 3, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : '#e8f0fe', color: mode === 'dark' ? '#e8eaed' : '#1967d2', fontWeight: 600 }} />
                     <Typography variant="h2" sx={{ fontSize: { xs: 38, md: 56 }, lineHeight: 1.08, fontWeight: 400, letterSpacing: '-0.04em', mb: 2 }}>
                         Video meetings for everyone.
                     </Typography>
-                    <Typography variant="h6" sx={{ color: '#5f6368', maxWidth: 560, fontWeight: 400, lineHeight: 1.6, mb: 4 }}>
+                    <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 560, fontWeight: 400, lineHeight: 1.6, mb: 4 }}>
                         Create a meeting link instantly, share it with your team, or join with a meeting code.
                     </Typography>
 
@@ -100,7 +108,7 @@ function HomeComponent() {
                             size="large"
                             startIcon={<VideoCallIcon />}
                             onClick={createRoom}
-                            sx={{ borderRadius: 2, px: 3, py: 1.4, bgcolor: '#1a73e8', textTransform: 'none', fontWeight: 700, boxShadow: 'none', '&:hover': { bgcolor: '#1558b0', boxShadow: '0 2px 8px rgba(26,115,232,0.25)' } }}
+                            sx={{ borderRadius: 2, px: 3, py: 1.4, textTransform: 'none', fontWeight: 700, boxShadow: 'none' }}
                         >
                             New meeting
                         </Button>
@@ -109,6 +117,7 @@ function HomeComponent() {
                             size="large"
                             startIcon={<EventAvailableIcon />}
                             onClick={() => navigate('/schedule')}
+                            color="inherit"
                             sx={{ borderRadius: 2, px: 3, py: 1.4, textTransform: 'none', fontWeight: 700 }}
                         >
                             Schedule
@@ -123,16 +132,16 @@ function HomeComponent() {
                             }}
                             placeholder="Enter a code or link"
                             size="small"
-                            InputProps={{ startAdornment: <KeyboardIcon sx={{ color: '#5f6368', mr: 1 }} /> }}
-                            sx={{ minWidth: { xs: '100%', sm: 250 }, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff' } }}
+                            InputProps={{ startAdornment: <KeyboardIcon sx={{ color: 'text.secondary', mr: 1 }} /> }}
+                            sx={{ minWidth: { xs: '100%', sm: 250 }, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper' } }}
                         />
-                        <Button onClick={joinRoom} sx={{ textTransform: 'none', fontWeight: 700, color: '#1a73e8' }}>
+                        <Button onClick={joinRoom} color="inherit" sx={{ textTransform: 'none', fontWeight: 700 }}>
                             Join
                         </Button>
                     </Stack>
 
                     <Divider sx={{ my: 4, maxWidth: 580 }} />
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} sx={{ color: '#5f6368' }}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} sx={{ color: 'text.secondary' }}>
                         <Stack direction="row" spacing={1.2} alignItems="center">
                             <LockOutlinedIcon fontSize="small" color="success" />
                             <Typography variant="body2">Private meeting rooms</Typography>
@@ -144,7 +153,7 @@ function HomeComponent() {
                     </Stack>
                 </Box>
 
-                <Paper elevation={0} sx={{ position: 'relative', minHeight: 420, borderRadius: 6, overflow: 'hidden', bgcolor: '#f8fbff', border: '1px solid #e8eaed', p: 3 }}>
+                <Paper elevation={0} sx={{ position: 'relative', minHeight: 420, borderRadius: 6, overflow: 'hidden', bgcolor: 'action.hover', border: 1, borderColor: 'divider', p: 3 }}>
                     <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 25% 20%, #d2e3fc 0, transparent 32%), radial-gradient(circle at 80% 20%, #e6f4ea 0, transparent 28%), radial-gradient(circle at 70% 80%, #fce8e6 0, transparent 28%)' }} />
                     <Paper elevation={0} sx={{ position: 'relative', height: 260, borderRadius: 5, bgcolor: '#202124', p: 2, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, boxShadow: '0 24px 60px rgba(60,64,67,0.22)' }}>
                         {previewParticipants.map((participant) => (
@@ -153,14 +162,14 @@ function HomeComponent() {
                             </Box>
                         ))}
                     </Paper>
-                    <Paper elevation={0} sx={{ position: 'relative', mt: -3, mx: 'auto', width: 'fit-content', borderRadius: 10, px: 2.5, py: 1.2, display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: '#fff', boxShadow: '0 12px 32px rgba(60,64,67,0.18)' }}>
+                    <Paper elevation={0} sx={{ position: 'relative', mt: -3, mx: 'auto', width: 'fit-content', borderRadius: 10, px: 2.5, py: 1.2, display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: 'background.paper', boxShadow: '0 12px 32px rgba(60,64,67,0.18)' }}>
                         <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#34a853' }} />
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>Ready to meet</Typography>
                     </Paper>
                     <Typography variant="h5" sx={{ position: 'relative', mt: 5, textAlign: 'center', fontWeight: 500 }}>
                         Get a link you can share
                     </Typography>
-                    <Typography sx={{ position: 'relative', mt: 1, textAlign: 'center', color: '#5f6368' }}>
+                    <Typography sx={{ position: 'relative', mt: 1, textAlign: 'center', color: 'text.secondary' }}>
                         Click <strong>New meeting</strong> to create a room and invite others.
                     </Typography>
                 </Paper>

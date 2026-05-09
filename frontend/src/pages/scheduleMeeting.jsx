@@ -1,16 +1,19 @@
 import React, { useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Autocomplete, Avatar, Box, Button, Chip, Divider, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Autocomplete, Avatar, Box, Button, Chip, Divider, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import ContactPhoneIcon from '@mui/icons-material/ContactPhone';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import EmailIcon from '@mui/icons-material/Email';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import VideoCallIcon from '@mui/icons-material/VideoCall';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { AuthContext } from '../contexts/AuthContext';
+import { ThemeContext } from '../contexts/ThemeContext';
 import { generateRoomId } from '../utils/generateRoomId';
 import server from '../environment';
+
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -25,6 +28,7 @@ const formatDateTime = (date, time) => {
 export default function ScheduleMeeting() {
     const navigate = useNavigate();
     const { userData } = useContext(AuthContext);
+    const { mode, toggleTheme } = useContext(ThemeContext);
     const [guestEmail, setGuestEmail] = useState('');
     const [guestPhone, setGuestPhone] = useState('');
     const [topic, setTopic] = useState('MeetSpace meeting');
@@ -44,7 +48,6 @@ export default function ScheduleMeeting() {
     const meetingLink = useMemo(() => `${window.location.origin}/meeting/${meetingCode}`, [meetingCode]);
     const scheduledAt = useMemo(() => formatDateTime(date, time), [date, time]);
 
-    // Extract unique, non-empty phone numbers from past scheduled meetings for the dropdown
     const savedContacts = useMemo(() => {
         const phones = scheduledMeetings
             .map((m) => m.guestPhone)
@@ -196,35 +199,40 @@ export default function ScheduleMeeting() {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: '#fff', color: '#202124' }}>
-            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: '1px solid #e8eaed', bgcolor: '#ffffff' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'transparent', color: 'text.primary' }}>
+            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ bgcolor: '#1a73e8', width: 40, height: 40 }}>
+                    <Avatar sx={{ bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)', color: mode === 'dark' ? '#ffffff' : '#000000', width: 40, height: 40 }}>
                         <EventAvailableIcon />
                     </Avatar>
                     <Typography variant="h5" sx={{ fontWeight: 500 }}>
                         Schedule Meeting
                     </Typography>
                 </Box>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/home')} sx={{ textTransform: 'none', fontWeight: 700 }}>
-                    Back to home
-                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton onClick={toggleTheme} color="inherit" sx={{ mr: 1 }}>
+                        {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                    </IconButton>
+                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/home')} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                        Back to home
+                    </Button>
+                </Box>
             </Box>
 
             <Box sx={{ maxWidth: 1120, mx: 'auto', px: { xs: 2.5, md: 5 }, py: { xs: 5, md: 8 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '0.95fr 1.05fr' }, gap: { xs: 4, md: 7 }, alignItems: 'start' }}>
                 <Box>
-                    <Chip label={userData?.name ? `Organizer: ${userData.name}` : 'Organizer'} sx={{ mb: 3, bgcolor: '#e8f0fe', color: '#1967d2', fontWeight: 600 }} />
+                    <Chip label={userData?.name ? `Organizer: ${userData.name}` : 'Organizer'} sx={{ mb: 3, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'primary.light', color: mode === 'dark' ? '#e8eaed' : 'primary.main', fontWeight: 600 }} />
                     <Typography variant="h2" sx={{ fontSize: { xs: 34, md: 50 }, lineHeight: 1.12, fontWeight: 400, mb: 2 }}>
                         Pick a date and send the invite.
                     </Typography>
-                    <Typography variant="h6" sx={{ color: '#5f6368', maxWidth: 520, fontWeight: 400, lineHeight: 1.6 }}>
+                    <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 520, fontWeight: 400, lineHeight: 1.6 }}>
                         Choose when the meeting will happen, generate a room code, and open Gmail with the invite already filled in.
                     </Typography>
 
-                    <Paper elevation={0} sx={{ mt: 4, p: 3, border: '1px solid #e8eaed', borderRadius: 3, bgcolor: '#f8fbff' }}>
-                        <Typography variant="overline" sx={{ color: '#5f6368', fontWeight: 800 }}>Meeting code</Typography>
+                    <Paper elevation={0} sx={{ mt: 4, p: 3, border: 1, borderColor: 'divider', borderRadius: 3, bgcolor: 'action.hover' }}>
+                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 800 }}>Meeting code</Typography>
                         <Typography variant="h4" sx={{ fontWeight: 700, my: 1 }}>{meetingCode}</Typography>
-                        <Typography sx={{ color: '#5f6368', wordBreak: 'break-word' }}>{meetingLink}</Typography>
+                        <Typography sx={{ color: 'text.secondary', wordBreak: 'break-word' }}>{meetingLink}</Typography>
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
                             <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={copyInvite} sx={{ textTransform: 'none', fontWeight: 700 }}>
                                 Copy invite
@@ -236,17 +244,17 @@ export default function ScheduleMeeting() {
                     </Paper>
                 </Box>
 
-                <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #e8eaed', boxShadow: '0 24px 70px rgba(60,64,67,0.14)', overflow: 'hidden' }}>
-                    <Box sx={{ bgcolor: '#f8fbff', p: { xs: 3, md: 4 }, borderBottom: '1px solid #e8eaed' }}>
+                <Paper elevation={0} sx={{ borderRadius: 3, border: 1, borderColor: 'divider', boxShadow: 3, overflow: 'hidden' }}>
+                    <Box sx={{ bgcolor: 'action.hover', p: { xs: 3, md: 4 }, borderBottom: 1, borderColor: 'divider' }}>
                         <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Avatar sx={{ bgcolor: '#e8f0fe', color: '#1a73e8' }}>
+                            <Avatar sx={{ bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)', color: mode === 'dark' ? '#ffffff' : '#000000' }}>
                                 <EmailIcon />
                             </Avatar>
                             <Box>
                                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
                                     Invite Guest
                                 </Typography>
-                                <Typography sx={{ color: '#5f6368' }}>
+                                <Typography sx={{ color: 'text.secondary' }}>
                                     Fill the details and send the invite via Gmail or WhatsApp.
                                 </Typography>
                             </Box>
@@ -264,7 +272,7 @@ export default function ScheduleMeeting() {
                                     onInputChange={(_, newValue) => setGuestPhone((newValue || '').trim())}
                                     renderOption={(props, option) => (
                                         <li {...props} key={option}>
-                                            <ContactPhoneIcon sx={{ mr: 1.2, color: '#25d366', fontSize: 20 }} />
+                                            <ContactPhoneIcon sx={{ mr: 1.2, color: 'success.main', fontSize: 20 }} />
                                             {option}
                                         </li>
                                     )}
@@ -290,10 +298,10 @@ export default function ScheduleMeeting() {
                         {error && <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>{error}</Alert>}
 
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 3 }}>
-                            <Button variant="contained" size="large" startIcon={<EmailIcon />} onClick={handleSchedule} sx={{ borderRadius: 2, px: 3, py: 1.2, bgcolor: '#1a73e8', textTransform: 'none', fontWeight: 700, boxShadow: 'none', '&:hover': { bgcolor: '#1558b0' } }}>
+                            <Button variant="contained" size="large" startIcon={<EmailIcon />} onClick={handleSchedule} sx={{ borderRadius: 2, px: 3, py: 1.2, textTransform: 'none', fontWeight: 700, boxShadow: 'none' }}>
                                 Invite via Gmail
                             </Button>
-                            <Button variant="contained" size="large" startIcon={<WhatsAppIcon />} onClick={handleWhatsAppInvite} sx={{ borderRadius: 2, px: 3, py: 1.2, bgcolor: '#25d366', textTransform: 'none', fontWeight: 700, boxShadow: 'none', '&:hover': { bgcolor: '#128c7e' } }}>
+                            <Button variant="contained" size="large" startIcon={<WhatsAppIcon />} onClick={handleWhatsAppInvite} sx={{ borderRadius: 2, px: 3, py: 1.2, textTransform: 'none', fontWeight: 700, boxShadow: 'none' }}>
                                 Invite via WhatsApp
                             </Button>
                         </Stack>
@@ -304,11 +312,11 @@ export default function ScheduleMeeting() {
                                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>Recently scheduled</Typography>
                                 <Stack spacing={1.5}>
                                     {scheduledMeetings.map((meeting) => (
-                                        <Box key={`${meeting.meetingCode}-${meeting.createdAt}`} sx={{ border: '1px solid #e8eaed', borderRadius: 2, p: 1.5 }}>
+                                        <Box key={`${meeting.meetingCode}-${meeting.createdAt}`} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
                                             <Typography sx={{ fontWeight: 700 }}>{meeting.topic}</Typography>
-                                            <Typography variant="body2" sx={{ color: '#5f6368' }}>{formatDateTime(meeting.date, meeting.time)}</Typography>
-                                            <Typography variant="body2" sx={{ color: '#5f6368' }}>{meeting.guestEmail || meeting.guestPhone}</Typography>
-                                            <Typography variant="body2" sx={{ color: '#1a73e8', fontWeight: 700 }}>{meeting.meetingCode}</Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>{formatDateTime(meeting.date, meeting.time)}</Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>{meeting.guestEmail || meeting.guestPhone}</Typography>
+                                            <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 700 }}>{meeting.meetingCode}</Typography>
                                         </Box>
                                     ))}
                                 </Stack>

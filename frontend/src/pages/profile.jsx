@@ -7,9 +7,14 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import VideoCallIcon from '@mui/icons-material/VideoCall';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { IconButton } from '@mui/material';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 function Profile() {
     const { getUserProfile, updateUserProfile } = useContext(AuthContext);
+    const { mode, toggleTheme } = useContext(ThemeContext);
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [about, setAbout] = useState('');
@@ -129,29 +134,34 @@ function Profile() {
         .toUpperCase();
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: '#fff', color: '#202124' }}>
-            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: '1px solid #e8eaed', bgcolor: '#ffffff' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'transparent', color: 'text.primary' }}>
+            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ bgcolor: '#1a73e8', width: 40, height: 40 }}>
+                    <Avatar sx={{ bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)', color: mode === 'dark' ? '#ffffff' : '#000000', width: 40, height: 40 }}>
                         <VideoCallIcon />
                     </Avatar>
                     <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.02em' }}>
                         MeetSpace
                     </Typography>
                 </Box>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/home')} sx={{ textTransform: 'none', fontWeight: 700 }}>
-                    Back to home
-                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton onClick={toggleTheme} color="inherit" sx={{ mr: 1 }}>
+                        {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                    </IconButton>
+                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/home')} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                        Back to home
+                    </Button>
+                </Box>
             </Box>
 
             <Box sx={{ maxWidth: 1120, mx: 'auto', px: { xs: 2.5, md: 5 }, py: { xs: 5, md: 8 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '0.85fr 1.15fr' }, gap: { xs: 4, md: 6 }, alignItems: 'start' }}>
-                <Paper elevation={0} sx={{ borderRadius: 6, p: { xs: 3, md: 4 }, bgcolor: '#f8fbff', border: '1px solid #e8eaed', textAlign: 'center' }}>
-                    <Chip label="Meeting identity" sx={{ mb: 3, bgcolor: '#e8f0fe', color: '#1967d2', fontWeight: 700 }} />
+                <Paper elevation={0} sx={{ borderRadius: 6, p: { xs: 3, md: 4 }, bgcolor: 'action.hover', border: 1, borderColor: 'divider', textAlign: 'center' }}>
+                    <Chip label="Meeting identity" sx={{ mb: 3, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'primary.light', color: mode === 'dark' ? '#e8eaed' : 'primary.main', fontWeight: 700 }} />
                     <Box sx={{ position: 'relative', width: 180, height: 180, mx: 'auto', mb: 2 }}>
-                        <Avatar src={profilePhoto} sx={{ width: 180, height: 180, bgcolor: '#1a73e8', fontSize: 54, fontWeight: 800, boxShadow: '0 24px 55px rgba(26,115,232,0.25)' }}>
+                        <Avatar src={profilePhoto} sx={{ width: 180, height: 180, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', fontSize: 54, fontWeight: 800 }}>
                             {initials}
                         </Avatar>
-                        <Button component="label" variant="contained" size="small" sx={{ position: 'absolute', right: 2, bottom: 8, minWidth: 0, width: 46, height: 46, borderRadius: '50%', bgcolor: '#1a73e8' }}>
+                        <Button component="label" variant="contained" size="small" sx={{ position: 'absolute', right: 2, bottom: 8, minWidth: 0, width: 46, height: 46, borderRadius: '50%' }}>
                             <PhotoCameraIcon />
                             <input hidden accept="image/*" type="file" onChange={handlePhotoChange} />
                         </Button>
@@ -159,10 +169,10 @@ function Profile() {
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
                         {name || 'Your name'}
                     </Typography>
-                    <Typography sx={{ color: '#5f6368', mb: 3 }}>
+                    <Typography sx={{ color: 'text.secondary', mb: 3 }}>
                         @{username || 'username'}
                     </Typography>
-                    <Typography sx={{ color: '#5f6368', lineHeight: 1.6 }}>
+                    <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
                         Your photo appears in meetings when your camera is turned off.
                     </Typography>
                     {profilePhoto && (
@@ -181,11 +191,11 @@ function Profile() {
                     )}
                 </Paper>
 
-                <Paper elevation={0} sx={{ borderRadius: 6, p: { xs: 3, md: 4 }, border: '1px solid #e8eaed', boxShadow: '0 24px 70px rgba(60,64,67,0.14)' }}>
+                <Paper elevation={0} sx={{ borderRadius: 6, p: { xs: 3, md: 4 }, border: 1, borderColor: 'divider', boxShadow: 3 }}>
                     <Typography variant="h3" sx={{ fontSize: { xs: 34, md: 44 }, fontWeight: 400, letterSpacing: '-0.04em', mb: 1 }}>
                         Your profile
                     </Typography>
-                    <Typography sx={{ color: '#5f6368', mb: 4 }}>
+                    <Typography sx={{ color: 'text.secondary', mb: 4 }}>
                         Keep your profile updated so participants can recognize you in meetings.
                     </Typography>
 

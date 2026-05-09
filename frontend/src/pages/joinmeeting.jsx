@@ -7,7 +7,11 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { IconButton } from '@mui/material';
 import { AuthContext } from '../contexts/AuthContext';
+import { ThemeContext } from '../contexts/ThemeContext';
 import { generateRoomId } from '../utils/generateRoomId';
 
 export default function JoinMeeting() {
@@ -17,6 +21,7 @@ export default function JoinMeeting() {
     const [error, setError] = useState('');
     const [info, setInfo] = useState('');
     const { addToUserHistory, userData } = useContext(AuthContext);
+    const { mode, toggleTheme } = useContext(ThemeContext);
 
     useEffect(() => {
         const code = searchParams.get('code');
@@ -51,32 +56,37 @@ export default function JoinMeeting() {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: '#fff', color: '#202124' }}>
-            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: '1px solid #e8eaed', bgcolor: '#ffffff' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'transparent', color: 'text.primary' }}>
+            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ bgcolor: '#1a73e8', width: 40, height: 40 }}>
+                    <Avatar sx={{ bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)', color: mode === 'dark' ? '#ffffff' : '#000000', width: 40, height: 40 }}>
                         <VideoCallIcon />
                     </Avatar>
                     <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.02em' }}>
                         MeetSpace
                     </Typography>
                 </Box>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/home')} sx={{ textTransform: 'none', fontWeight: 700 }}>
-                    Back to home
-                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton onClick={toggleTheme} color="inherit" sx={{ mr: 1 }}>
+                        {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                    </IconButton>
+                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/home')} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                        Back to home
+                    </Button>
+                </Box>
             </Box>
 
             <Box sx={{ maxWidth: 1120, mx: 'auto', px: { xs: 2.5, md: 5 }, py: { xs: 5, md: 8 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '0.95fr 1.05fr' }, gap: { xs: 4, md: 7 }, alignItems: 'center' }}>
                 <Box>
-                    <Chip label={userData?.name ? `Host: ${userData.name}` : 'Host a secure room'} sx={{ mb: 3, bgcolor: '#e8f0fe', color: '#1967d2', fontWeight: 600 }} />
+                    <Chip label={userData?.name ? `Host: ${userData.name}` : 'Host a secure room'} sx={{ mb: 3, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'primary.light', color: mode === 'dark' ? '#e8eaed' : 'primary.main', fontWeight: 600 }} />
                     <Typography variant="h2" sx={{ fontSize: { xs: 34, md: 50 }, lineHeight: 1.12, fontWeight: 400, letterSpacing: '-0.04em', mb: 2 }}>
                         Create a meeting room for your guests.
                     </Typography>
-                    <Typography variant="h6" sx={{ color: '#5f6368', maxWidth: 520, fontWeight: 400, lineHeight: 1.6 }}>
+                    <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 520, fontWeight: 400, lineHeight: 1.6 }}>
                         Generate a host code, share it with others, and start the meeting when you are ready.
                     </Typography>
 
-                    <Stack spacing={2.2} sx={{ mt: 4, color: '#5f6368' }}>
+                    <Stack spacing={2.2} sx={{ mt: 4, color: 'text.secondary' }}>
                         <Stack direction="row" spacing={1.5} alignItems="center">
                             <VerifiedUserOutlinedIcon color="success" />
                             <Typography>Your code keeps each meeting room separate.</Typography>
@@ -88,17 +98,17 @@ export default function JoinMeeting() {
                     </Stack>
                 </Box>
 
-                <Paper elevation={0} sx={{ borderRadius: 6, border: '1px solid #e8eaed', boxShadow: '0 24px 70px rgba(60,64,67,0.16)', overflow: 'hidden' }}>
-                    <Box sx={{ bgcolor: '#f8fbff', p: { xs: 3, md: 4 }, borderBottom: '1px solid #e8eaed' }}>
+                <Paper elevation={0} sx={{ borderRadius: 6, border: 1, borderColor: 'divider', boxShadow: 3, overflow: 'hidden' }}>
+                    <Box sx={{ bgcolor: 'action.hover', p: { xs: 3, md: 4 }, borderBottom: 1, borderColor: 'divider' }}>
                         <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Avatar sx={{ bgcolor: '#e8f0fe', color: '#1a73e8' }}>
+                            <Avatar sx={{ bgcolor: 'background.paper', color: 'primary.main' }}>
                                 <KeyboardIcon />
                             </Avatar>
                             <Box>
                                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
                                     Host meeting code
                                 </Typography>
-                                <Typography sx={{ color: '#5f6368' }}>
+                                <Typography sx={{ color: 'text.secondary' }}>
                                     Create a fresh code or use your own code for this meeting.
                                 </Typography>
                             </Box>
@@ -121,7 +131,7 @@ export default function JoinMeeting() {
                                     handleJoin();
                                 }
                             }}
-                            InputProps={{ startAdornment: <KeyboardIcon sx={{ color: '#5f6368', mr: 1 }} /> }}
+                            InputProps={{ startAdornment: <KeyboardIcon sx={{ color: 'text.secondary', mr: 1 }} /> }}
                             sx={{ mb: 2.5, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                         />
 
@@ -134,7 +144,7 @@ export default function JoinMeeting() {
                                 size="large"
                                 startIcon={<VideoCallIcon />}
                                 onClick={handleJoin}
-                                sx={{ borderRadius: 2, px: 3, py: 1.2, bgcolor: '#1a73e8', textTransform: 'none', fontWeight: 700, boxShadow: 'none', '&:hover': { bgcolor: '#1558b0' } }}
+                                sx={{ borderRadius: 2, px: 3, py: 1.2, textTransform: 'none', fontWeight: 700, boxShadow: 'none' }}
                             >
                                 Start meeting
                             </Button>

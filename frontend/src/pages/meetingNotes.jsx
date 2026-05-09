@@ -20,10 +20,14 @@ import HistoryIcon from '@mui/icons-material/History';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EmailIcon from '@mui/icons-material/Email';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { ThemeContext } from '../contexts/ThemeContext';
 import withAuth from '../utils/withAuth';
 
 function MeetingNotes() {
     const { getHistoryOfUser } = useContext(AuthContext);
+    const { mode, toggleTheme } = useContext(ThemeContext);
     
     const [meetings, setMeetings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -75,34 +79,39 @@ function MeetingNotes() {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: '#f8fbff', pb: 10 }}>
-            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: '1px solid #e8eaed', bgcolor: '#ffffff' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'transparent', pb: 10 }}>
+            <Box sx={{ height: 72, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 5 }, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <HistoryIcon sx={{ color: '#1a73e8' }} />
-                    <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                    <HistoryIcon sx={{ color: 'primary.main' }} />
+                    <Typography variant="h5" sx={{ fontWeight: 500, color: 'text.primary' }}>
                         Meeting Notes
                     </Typography>
                 </Box>
-                <IconButton onClick={() => navigate('/home')}>
-                    <HomeIcon />
-                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton onClick={toggleTheme} color="inherit">
+                        {mode === 'dark' ? <LightModeIcon sx={{ color: 'text.primary' }} /> : <DarkModeIcon sx={{ color: 'text.primary' }} />}
+                    </IconButton>
+                    <IconButton onClick={() => navigate('/home')}>
+                        <HomeIcon sx={{ color: 'text.primary' }} />
+                    </IconButton>
+                </Box>
             </Box>
 
             <Container maxWidth="md" sx={{ mt: 6 }}>
-                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-0.02em' }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-0.02em', color: 'text.primary' }}>
                     Your AI Generated Notes
                 </Typography>
-                <Typography sx={{ color: '#5f6368', mb: 4 }}>
+                <Typography sx={{ color: 'text.secondary', mb: 4 }}>
                     Review and download summaries from your past meetings.
                 </Typography>
 
                 {loading ? (
-                    <Typography>Loading your notes...</Typography>
+                    <Typography sx={{ color: 'text.primary' }}>Loading your notes...</Typography>
                 ) : meetings.length === 0 ? (
-                    <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 4, bgcolor: '#fff', border: '1px dashed #dadce0' }}>
-                        <DescriptionIcon sx={{ fontSize: 64, color: '#dadce0', mb: 2 }} />
-                        <Typography variant="h6" sx={{ color: '#3c4043', mb: 1 }}>No notes found</Typography>
-                        <Typography variant="body2" sx={{ color: '#70757a' }}>
+                    <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 4, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderStyle: 'dashed' }}>
+                        <DescriptionIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
+                        <Typography variant="h6" sx={{ color: 'text.primary', mb: 1 }}>No notes found</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                             Complete a meeting with transcription enabled to generate AI notes.
                         </Typography>
                         <Button variant="contained" sx={{ mt: 3, borderRadius: 2, textTransform: 'none' }} onClick={() => navigate('/home')}>
@@ -112,14 +121,14 @@ function MeetingNotes() {
                 ) : (
                     <Stack spacing={3}>
                         {meetings.map((meeting) => (
-                            <Card key={meeting._id} sx={{ borderRadius: 4, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #e8eaed', overflow: 'hidden' }}>
-                                <Box sx={{ p: 3, bgcolor: '#fff' }}>
+                            <Card key={meeting._id} sx={{ borderRadius: 4, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: 1, borderColor: 'divider', overflow: 'hidden' }}>
+                                <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
                                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
                                         <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, color: 'text.primary' }}>
                                                 Meeting: {meeting.meetingCode}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: '#5f6368' }}>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                                 {new Date(meeting.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </Typography>
                                         </Box>
@@ -158,11 +167,11 @@ function MeetingNotes() {
                                     
                                     <Divider sx={{ mb: 2 }} />
                                     
-                                    <Box sx={{ bgcolor: '#f8f9fa', p: 2.5, borderRadius: 3 }}>
-                                        <Typography variant="subtitle2" sx={{ color: '#1a73e8', fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <Box sx={{ bgcolor: 'action.hover', p: 2.5, borderRadius: 3 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                             AI Summary
                                         </Typography>
-                                        <Typography sx={{ color: '#3c4043', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                                        <Typography sx={{ color: 'text.primary', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                                             {meeting.summary}
                                         </Typography>
                                     </Box>
