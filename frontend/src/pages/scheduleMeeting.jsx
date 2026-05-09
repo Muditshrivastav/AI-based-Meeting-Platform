@@ -1,6 +1,7 @@
 import React, { useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Avatar, Box, Button, Chip, Divider, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Autocomplete, Avatar, Box, Button, Chip, Divider, Paper, Stack, TextField, Typography } from '@mui/material';
+import ContactPhoneIcon from '@mui/icons-material/ContactPhone';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import EmailIcon from '@mui/icons-material/Email';
@@ -42,6 +43,14 @@ export default function ScheduleMeeting() {
 
     const meetingLink = useMemo(() => `${window.location.origin}/meeting/${meetingCode}`, [meetingCode]);
     const scheduledAt = useMemo(() => formatDateTime(date, time), [date, time]);
+
+    // Extract unique, non-empty phone numbers from past scheduled meetings for the dropdown
+    const savedContacts = useMemo(() => {
+        const phones = scheduledMeetings
+            .map((m) => m.guestPhone)
+            .filter(Boolean);
+        return [...new Set(phones)];
+    }, [scheduledMeetings]);
 
     const saveSchedule = () => {
         const scheduledAtIso = new Date(`${date}T${time}`).toISOString();
@@ -248,7 +257,26 @@ export default function ScheduleMeeting() {
                         <Stack spacing={2.2}>
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                                 <TextField label="Guest Gmail address" type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value.trim())} fullWidth />
-                                <TextField label="Guest WhatsApp number" placeholder="e.g. 919876543210" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.trim())} fullWidth />
+                                <Autocomplete
+                                    freeSolo
+                                    options={savedContacts}
+                                    value={guestPhone}
+                                    onInputChange={(_, newValue) => setGuestPhone((newValue || '').trim())}
+                                    renderOption={(props, option) => (
+                                        <li {...props} key={option}>
+                                            <ContactPhoneIcon sx={{ mr: 1.2, color: '#25d366', fontSize: 20 }} />
+                                            {option}
+                                        </li>
+                                    )}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Guest WhatsApp number"
+                                            placeholder={savedContacts.length > 0 ? 'Select or type a new number' : 'e.g. 919876543210'}
+                                        />
+                                    )}
+                                    fullWidth
+                                />
                             </Stack>
                             <TextField label="Meeting topic" value={topic} onChange={(e) => setTopic(e.target.value)} fullWidth />
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

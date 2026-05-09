@@ -480,6 +480,64 @@
     margin-right: 8px;
 }
 
+/* CC Transcription Button */
+
+.ccButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 16px 0 12px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.ccButton svg {
+    font-size: 1.3rem;
+}
+
+.ccButton:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-2px);
+}
+
+.ccButtonActive {
+    background: #1a73e8 !important;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.3);
+}
+
+.ccButtonActive:hover {
+    background: #1558b0 !important;
+}
+
+.ccLabel {
+    pointer-events: none;
+}
+
+.ccLiveDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ea4335;
+    box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.3);
+    animation: ccPulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes ccPulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(234, 67, 53, 0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(234, 67, 53, 0.15); }
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }

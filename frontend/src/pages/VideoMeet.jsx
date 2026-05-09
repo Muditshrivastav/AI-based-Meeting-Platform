@@ -70,10 +70,19 @@ export default function VideoMeetComponent() {
     const [transcript, setTranscript] = useState([]);
     const [recognition, setRecognition] = useState(null);
     const [isTranscribing, setIsTranscribing] = useState(false);
-    const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
+    const [transcriptionEnabled, setTranscriptionEnabled] = useState(false);
     const [finalSummary, setFinalSummary] = useState(null);
     const [showSummary, setShowSummary] = useState(false);
     const transcriptEndRef = useRef(null);
+
+    // Refs to avoid stale closures inside SpeechRecognition callbacks
+    const audioRef = useRef(audio);
+    const transcriptionEnabledRef = useRef(transcriptionEnabled);
+    const isTranscribingRef = useRef(isTranscribing);
+
+    useEffect(() => { audioRef.current = audio; }, [audio]);
+    useEffect(() => { transcriptionEnabledRef.current = transcriptionEnabled; }, [transcriptionEnabled]);
+    useEffect(() => { isTranscribingRef.current = isTranscribing; }, [isTranscribing]);
 
     // TODO
     // if(isChrome() === false) {
@@ -132,13 +141,16 @@ export default function VideoMeetComponent() {
     }, [])
 
     useEffect(() => {
-        if (audio && transcriptionEnabled && !isTranscribing && socketRef.current) {
+        if (audio && transcriptionEnabled && !isTranscribingRef.current && socketRef.current) {
             startTranscription();
-        } else if ((!audio || !transcriptionEnabled) && isTranscribing) {
-            if (recognition) recognition.stop();
+        } else if ((!audio || !transcriptionEnabled) && isTranscribingRef.current) {
+            if (recognition) {
+                try { recognition.stop(); } catch (e) { /* already stopped */ }
+            }
             setIsTranscribing(false);
         }
-    }, [audio, transcriptionEnabled, isTranscribing, socketRef.current]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [audio, transcriptionEnabled, isTranscribing]);
 
     const checkScheduledMeetingAccess = async () => {
         const localSchedule = getLocalScheduledMeeting();
@@ -272,26 +284,24 @@ export default function VideoMeetComponent() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: videoOn, audio: audioOn });
             getUserMediaSuccess(stream);
-            if (audioOn) {
-                startTranscription();
-            }
+            // Transcription will auto-start via the useEffect when audio + socket are ready
         } catch (e) {
             console.log('getMedia error', e);
         }
     }
 
     const startTranscription = () => {
-        if (isTranscribing) return; // Prevent double start
+        if (isTranscribingRef.current) return; // Prevent double start
         
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            console.log("Speech recognition not supported");
+            console.log("Speech recognition not supported in this browser");
             return;
         }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recog = new SpeechRecognition();
         recog.continuous = true;
-        recog.interimResults = true;
+        recog.interimResults = false; // Only emit final results to avoid noise
         recog.lang = 'en-US';
 
         recog.onresult = (event) => {
@@ -313,16 +323,16 @@ export default function VideoMeetComponent() {
         };
 
         recog.onerror = (event) => {
-            console.error("Speech recognition error", event.error);
-            if (event.error === 'no-speech') return;
+            console.error("Speech recognition error:", event.error);
+            if (event.error === 'no-speech' || event.error === 'aborted') return;
             setIsTranscribing(false);
         };
 
         recog.onend = () => {
             setIsTranscribing(false);
-            // Auto-restart if audio and transcription are still enabled
-            if (audio && transcriptionEnabled) {
-                setTimeout(() => startTranscription(), 100);
+            // Use refs to read current values — avoids stale closure
+            if (audioRef.current && transcriptionEnabledRef.current) {
+                setTimeout(() => startTranscription(), 300);
             }
         };
 
@@ -330,9 +340,10 @@ export default function VideoMeetComponent() {
         try {
             recog.start();
             setIsTranscribing(true);
-            console.log("Transcription started");
+            console.log("Transcription started successfully");
         } catch (e) {
             console.error("Error starting recognition:", e);
+            setIsTranscribing(false);
         }
     };
 
@@ -771,7 +782,7 @@ export default function VideoMeetComponent() {
                 // Save to history automatically
                 if (data.summary) {
                     try {
-                        await fetch(`${server_url}/api/v1/users/add_to_history`, {
+                        await fetch(`${server_url}/api/v1/users/add_to_activity`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -948,13 +959,15 @@ export default function VideoMeetComponent() {
                             </IconButton>
                         </Badge>
 
-                        <IconButton 
+                        <button 
                             onClick={() => setTranscriptionEnabled(!transcriptionEnabled)} 
-                            className={`${styles.controlButton} ${transcriptionEnabled ? styles.activeControlButton : ''}`}
-                            title={transcriptionEnabled ? "Disable Transcription" : "Enable Transcription"}
+                            className={`${styles.ccButton} ${transcriptionEnabled ? styles.ccButtonActive : ''}`}
+                            title={transcriptionEnabled ? "Stop Transcription" : "Start Transcription"}
                         >
                             {transcriptionEnabled ? <ClosedCaptionIcon /> : <ClosedCaptionOffIcon />}
-                        </IconButton>
+                            <span className={styles.ccLabel}>{transcriptionEnabled ? 'Stop CC' : 'Start CC'}</span>
+                            {isTranscribing && <span className={styles.ccLiveDot} />}
+                        </button>
 
                     </div>
 

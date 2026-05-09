@@ -18,6 +18,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import DownloadIcon from '@mui/icons-material/Download';
 import HistoryIcon from '@mui/icons-material/History';
 import DescriptionIcon from '@mui/icons-material/Description';
+import EmailIcon from '@mui/icons-material/Email';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import withAuth from '../utils/withAuth';
 
 function MeetingNotes() {
@@ -57,6 +59,19 @@ function MeetingNotes() {
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
+    };
+
+    const shareViaWhatsApp = (meeting) => {
+        const text = `Meeting Notes\n==============\nDate: ${new Date(meeting.date).toLocaleString()}\nMeeting Code: ${meeting.meetingCode}\n\nSummary:\n${meeting.summary}`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const shareViaEmail = (meeting) => {
+        const subject = `Meeting Notes - ${meeting.meetingCode}`;
+        const body = `Meeting Notes\n==============\nDate: ${new Date(meeting.date).toLocaleString()}\nMeeting Code: ${meeting.meetingCode}\n\nSummary:\n${meeting.summary}`;
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
     };
 
     return (
@@ -108,15 +123,37 @@ function MeetingNotes() {
                                                 {new Date(meeting.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </Typography>
                                         </Box>
-                                        <Button 
-                                            startIcon={<DownloadIcon />} 
-                                            variant="outlined" 
-                                            size="small"
-                                            onClick={() => downloadNote(meeting)}
-                                            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-                                        >
-                                            Download .txt
-                                        </Button>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                                            <Button 
+                                                startIcon={<WhatsAppIcon />} 
+                                                variant="outlined" 
+                                                size="small"
+                                                color="success"
+                                                onClick={() => shareViaWhatsApp(meeting)}
+                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                            >
+                                                WhatsApp
+                                            </Button>
+                                            <Button 
+                                                startIcon={<EmailIcon />} 
+                                                variant="outlined" 
+                                                size="small"
+                                                onClick={() => shareViaEmail(meeting)}
+                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                            >
+                                                Email
+                                            </Button>
+                                            <Button 
+                                                startIcon={<DownloadIcon />} 
+                                                variant="outlined" 
+                                                size="small"
+                                                color="inherit"
+                                                onClick={() => downloadNote(meeting)}
+                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                            >
+                                                Download
+                                            </Button>
+                                        </Stack>
                                     </Stack>
                                     
                                     <Divider sx={{ mb: 2 }} />
