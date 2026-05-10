@@ -202,6 +202,7 @@ const checkMeetingAccess = async (req, res) => {
             scheduled: true,
             topic: scheduledMeeting.topic,
             scheduledAt: scheduledMeeting.scheduledAt,
+            createdBy: scheduledMeeting.createdBy,
             message: allowed
                 ? "Meeting is open"
                 : "This meeting is not open yet"

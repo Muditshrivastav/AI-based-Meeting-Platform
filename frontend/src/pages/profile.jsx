@@ -158,7 +158,7 @@ function Profile() {
                 <Paper elevation={0} sx={{ borderRadius: 6, p: { xs: 3, md: 4 }, bgcolor: 'action.hover', border: 1, borderColor: 'divider', textAlign: 'center' }}>
                     <Chip label="Meeting identity" sx={{ mb: 3, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'primary.light', color: mode === 'dark' ? '#e8eaed' : 'primary.main', fontWeight: 700 }} />
                     <Box sx={{ position: 'relative', width: 180, height: 180, mx: 'auto', mb: 2 }}>
-                        <Avatar src={profilePhoto} sx={{ width: 180, height: 180, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', fontSize: 54, fontWeight: 800 }}>
+                        <Avatar src={profilePhoto} sx={{ width: 180, height: 180, bgcolor: '#1a73e8', color: '#ffffff', fontSize: 54, fontWeight: 800, border: '4px solid rgba(255,255,255,0.2)' }}>
                             {initials}
                         </Avatar>
                         <Button component="label" variant="contained" size="small" sx={{ position: 'absolute', right: 2, bottom: 8, minWidth: 0, width: 46, height: 46, borderRadius: '50%' }}>

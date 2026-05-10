@@ -48,10 +48,10 @@ export default function JoinMeeting() {
             if (localStorage.getItem('token')) {
                 await addToUserHistory(code);
             }
-            navigate(`/meeting/${code}`);
+            navigate(`/meeting/${code}`, { state: { isHost: true } });
         } catch (err) {
             setError('Unable to save meeting history, but you can still join.');
-            navigate(`/meeting/${code}`);
+            navigate(`/meeting/${code}`, { state: { isHost: true } });
         }
     };
 

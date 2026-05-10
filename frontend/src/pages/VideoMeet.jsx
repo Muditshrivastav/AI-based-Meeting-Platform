@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import io from "socket.io-client";
 import { Badge, IconButton, TextField } from '@mui/material';
 import { Button } from '@mui/material';
@@ -39,7 +39,10 @@ export default function VideoMeetComponent() {
 
     let localVideoref = useRef();
     const navigate = useNavigate();
+    const location = useLocation();
     const [meetingAccess, setMeetingAccess] = useState({ status: 'checking' });
+    const [isHost, setIsHost] = useState(location.state?.isHost || false);
+    const profileImageRef = useRef(null);
 
     let [videoAvailable, setVideoAvailable] = useState(true);
 
@@ -109,6 +112,13 @@ export default function VideoMeetComponent() {
                 setUsername(displayName);
                 usernameRef.current = displayName;
                 profilePhotoRef.current = savedPhoto;
+
+                // Also check host status if it's a scheduled meeting
+                if (access.scheduled && access.createdBy && profile?.username) {
+                    if (access.createdBy === profile.username) {
+                        setIsHost(true);
+                    }
+                }
             } catch (e) {
                 profilePhotoRef.current = localStorage.getItem('profilePhoto:current') || "";
             }
@@ -139,6 +149,16 @@ export default function VideoMeetComponent() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    useEffect(() => {
+        const photo = userData?.profilePhoto || localStorage.getItem(`profilePhoto:${userData?.username}`) || localStorage.getItem('profilePhoto:current') || "";
+        if (photo) {
+            profilePhotoRef.current = photo;
+            const img = new Image();
+            img.onload = () => { profileImageRef.current = img; };
+            img.src = photo;
+        }
+    }, [userData]);
 
     useEffect(() => {
         if (audio && transcriptionEnabled && !isTranscribingRef.current && socketRef.current) {
@@ -509,7 +529,7 @@ export default function VideoMeetComponent() {
         socketRef.current.on('transcription-chunk', addTranscription)
 
         socketRef.current.on('connect', () => {
-            socketRef.current.emit('join-call', window.location.href)
+            socketRef.current.emit('join-call', window.location.href, usernameRef.current, isHost)
             socketIdRef.current = socketRef.current.id
             setVideos((videos) => {
                 const filteredVideos = videos.filter((video) => video.socketId !== socketIdRef.current);
@@ -527,13 +547,21 @@ export default function VideoMeetComponent() {
                 })
             })
 
-            socketRef.current.on('user-joined', (id, clients) => {
+            socketRef.current.on('user-joined', (id, clients, participantsMeta) => {
                 clients.forEach((socketListId) => {
                     if (socketListId === socketIdRef.current) {
                         return;
                     }
 
+                    const participant = participantsMeta.find(p => p.socketId === socketListId);
+
                     if (connections[socketListId]) {
+                        // Update existing participant info if needed
+                        if (participant) {
+                            setVideos(videos => videos.map(v => 
+                                v.socketId === socketListId ? { ...v, name: participant.name, isHost: participant.isHost } : v
+                            ));
+                        }
                         return;
                     }
                     
@@ -558,7 +586,7 @@ export default function VideoMeetComponent() {
                             // Update the stream of the existing video
                             setVideos(videos => {
                                 const updatedVideos = videos.map(video =>
-                                    video.socketId === socketListId ? { ...video, stream: event.stream } : video
+                                    video.socketId === socketListId ? { ...video, stream: event.stream, name: participant?.name || "Participant", isHost: !!participant?.isHost } : video
                                 );
                                 videoRef.current = updatedVideos;
                                 return updatedVideos;
@@ -569,6 +597,8 @@ export default function VideoMeetComponent() {
                             let newVideo = {
                                 socketId: socketListId,
                                 stream: event.stream,
+                                name: participant?.name || "Participant",
+                                isHost: !!participant?.isHost,
                                 autoplay: true,
                                 playsinline: true
                             };
@@ -658,22 +688,32 @@ export default function VideoMeetComponent() {
 
         drawFallback();
 
-        const profilePhoto = getProfilePhoto();
-        if (profilePhoto) {
-            const image = new Image();
-            image.onload = () => {
-                drawFallback();
-                const avatarSize = Math.min(width, height) * 0.46;
-                const x = (width - avatarSize) / 2;
-                const y = (height - avatarSize) / 2;
-                context.save();
-                context.beginPath();
-                context.arc(width / 2, height / 2, avatarSize / 2, 0, Math.PI * 2);
-                context.clip();
-                context.drawImage(image, x, y, avatarSize, avatarSize);
-                context.restore();
-            };
-            image.src = profilePhoto;
+        const renderImage = (img) => {
+            drawFallback();
+            const avatarSize = Math.min(width, height) * 0.52; // Slightly larger
+            const x = (width - avatarSize) / 2;
+            const y = (height - avatarSize) / 2;
+            context.save();
+            context.beginPath();
+            context.arc(width / 2, height / 2, avatarSize / 2, 0, Math.PI * 2);
+            context.clip();
+            context.drawImage(img, x, y, avatarSize, avatarSize);
+            context.restore();
+        }
+
+        if (profileImageRef.current && profileImageRef.current.complete) {
+            renderImage(profileImageRef.current);
+        } else {
+            const profilePhoto = getProfilePhoto();
+            if (profilePhoto) {
+                const image = new Image();
+                image.onload = () => {
+                    renderImage(image);
+                    profileImageRef.current = image;
+                };
+                image.src = profilePhoto;
+                if (image.complete) image.onload();
+            }
         }
 
         let stream = canvas.captureStream(10)
@@ -980,6 +1020,9 @@ export default function VideoMeetComponent() {
                         playsInline
                         style={{ display: 'block' }}
                     ></video>
+                    <div className={styles.localUserBadge}>
+                        <span>{username} (You) {isHost && <strong className={styles.hostLabel}>HOST</strong>}</span>
+                    </div>
 
                     <div className={styles.conferenceView}>
                         {videos.map((video) => (
@@ -996,7 +1039,9 @@ export default function VideoMeetComponent() {
                                     playsInline
                                 >
                                 </video>
-                                <span>Participant</span>
+                                <div className={styles.participantBadge}>
+                                    <span>{video.name || 'Participant'} {video.isHost && <strong className={styles.hostLabel}>HOST</strong>}</span>
+                                </div>
                             </div>
 
                         ))}

@@ -587,3 +587,40 @@
     justify-content: flex-end;
     margin-top: 32px;
 }
+
+/* Badge and Host Labels */
+.participantBadge,
+.localUserBadge {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    border-radius: 999px;
+    padding: 6px 14px;
+    background: rgba(18, 18, 18, 0.72);
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+    z-index: 5;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hostLabel {
+    background: #1a73e8;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.localUserBadge {
+    bottom: 14px;
+    left: 14px;
+}
+

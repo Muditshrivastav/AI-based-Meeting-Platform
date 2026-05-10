@@ -4,6 +4,7 @@ import { Server } from "socket.io"
 let connections = {}
 let messages = {}
 let timeOnline = {}
+let meta = {} // Store { name, isHost } for each socket.id
 
 export const connectToSocket = (server) => {
     const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000")
@@ -25,7 +26,7 @@ export const connectToSocket = (server) => {
 
         console.log("SOMETHING CONNECTED")
 
-        socket.on("join-call", (path) => {
+        socket.on("join-call", (path, name, isHost) => {
 
             if (connections[path] === undefined) {
                 connections[path] = []
@@ -35,13 +36,20 @@ export const connectToSocket = (server) => {
             }
 
             timeOnline[socket.id] = new Date();
-
-            // connections[path].forEach(elem => {
-            //     io.to(elem)
-            // })
+            meta[socket.id] = { name: name || "Guest", isHost: !!isHost };
 
             for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path])
+                const targetId = connections[path][a];
+                
+                // For everyone in the room:
+                // Send the metadata of all participants in the room
+                const participantsMeta = connections[path].map(id => ({
+                    socketId: id,
+                    name: meta[id]?.name || "Guest",
+                    isHost: meta[id]?.isHost || false
+                }));
+
+                io.to(targetId).emit("user-joined", socket.id, connections[path], participantsMeta);
             }
 
             if (messages[path] !== undefined) {
@@ -123,6 +131,7 @@ export const connectToSocket = (server) => {
                         var index = connections[key].indexOf(socket.id)
 
                         connections[key].splice(index, 1)
+                        delete meta[socket.id];
 
 
                         if (connections[key].length === 0) {
