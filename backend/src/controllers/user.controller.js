@@ -5,6 +5,61 @@ import bcrypt, { hash } from "bcrypt"
 import crypto from "crypto"
 import { Meeting } from "../models/meeting.model.js";
 import { ScheduledMeeting } from "../models/scheduledMeeting.model.js";
+
+const verifyGoogleIdToken = async (credential) => {
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+        throw new Error("GOOGLE_CLIENT_ID is not configured on the backend");
+    }
+
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!response.ok) {
+        throw new Error("Invalid Google sign-in token");
+    }
+
+    const payload = await response.json();
+    if (payload.aud !== googleClientId) {
+        throw new Error("Google token audience does not match this app");
+    }
+
+    if (payload.email_verified !== "true" && payload.email_verified !== true) {
+        throw new Error("Google email is not verified");
+    }
+
+    return payload;
+}
+
+const verifyGoogleAccessToken = async (accessToken) => {
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+        throw new Error("GOOGLE_CLIENT_ID is not configured on the backend");
+    }
+
+    const tokenResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`);
+    if (!tokenResponse.ok) {
+        throw new Error("Invalid Google access token");
+    }
+
+    const tokenPayload = await tokenResponse.json();
+    if (tokenPayload.aud !== googleClientId) {
+        throw new Error("Google token audience does not match this app");
+    }
+
+    const userResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!userResponse.ok) {
+        throw new Error("Unable to read Google profile");
+    }
+
+    const profile = await userResponse.json();
+    if (profile.email_verified !== "true" && profile.email_verified !== true) {
+        throw new Error("Google email is not verified");
+    }
+
+    return profile;
+}
+
 const login = async (req, res) => {
 
     const { username, password } = req.body;
@@ -34,6 +89,45 @@ const login = async (req, res) => {
 
     } catch (e) {
         return res.status(500).json({ message: `Something went wrong ${e}` })
+    }
+}
+
+const googleLogin = async (req, res) => {
+    const { credential, accessToken } = req.body;
+
+    if (!credential && !accessToken) {
+        return res.status(httpStatus.BAD_REQUEST).json({ message: "Google credential is required" });
+    }
+
+    try {
+        const googleUser = credential
+            ? await verifyGoogleIdToken(credential)
+            : await verifyGoogleAccessToken(accessToken);
+        const username = googleUser.email.toLowerCase();
+
+        let user = await User.findOne({ username });
+        const token = crypto.randomBytes(20).toString("hex");
+
+        if (!user) {
+            const randomPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+            user = new User({
+                name: googleUser.name || username.split("@")[0],
+                username,
+                password: randomPassword,
+                profilePhoto: googleUser.picture || "",
+                token
+            });
+        } else {
+            user.token = token;
+            if (!user.profilePhoto && googleUser.picture) user.profilePhoto = googleUser.picture;
+            if (!user.name && googleUser.name) user.name = googleUser.name;
+        }
+
+        await user.save();
+
+        return res.status(httpStatus.OK).json({ token });
+    } catch (e) {
+        return res.status(httpStatus.UNAUTHORIZED).json({ message: e.message || "Google login failed" });
     }
 }
 
@@ -212,4 +306,4 @@ const checkMeetingAccess = async (req, res) => {
     }
 }
 
-export { login, register, getUserHistory, addToHistory, getUserProfile, updateUserProfile, scheduleMeeting, checkMeetingAccess }
+export { login, googleLogin, register, getUserHistory, addToHistory, getUserProfile, updateUserProfile, scheduleMeeting, checkMeetingAccess }

@@ -13,6 +13,7 @@ import JoinMeeting from './pages/joinmeeting';
 import ScheduleMeeting from './pages/scheduleMeeting';
 import MeetingNotes from './pages/meetingNotes';
 import ParticlesBackground from './ParticlesBackground';
+import AIAgentChat from './components/AIAgentChat';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <ThemeContextProvider>
           <AuthProvider>
             <ParticlesBackground />
+            <AIAgentChat />
             <Routes>
               <Route path='/' element={<LandingPage />} />
               <Route path='/auth' element={<Authentication />} />

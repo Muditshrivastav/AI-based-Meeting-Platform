@@ -10,20 +10,23 @@ import { connectToSocket } from "./controllers/socketManager.js";
 
 import cors from "cors";
 import userRoutes from "./routes/users.routes.js";
+import agentRoutes from "./routes/agent.routes.js";
 
 const app = express();
 const server = createServer(app);
 const io = connectToSocket(server);
-const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000")
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+const isAllowedDevOrigin = (origin) => /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 
-app.set("port", (process.env.PORT || 8000))
+
+app.set("port", Number(process.env.PORT) || 8000)
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin) || isAllowedDevOrigin(origin)) {
             return callback(null, true);
         }
 
@@ -35,6 +38,7 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ limit: "2mb", extended: true }));
 
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/agent", agentRoutes);
 
 app.post("/api/v1/summarize", async (req, res) => {
     const { meetingText } = req.body;
@@ -75,9 +79,20 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/videom
 const start = async () => {
     try {
         const connectionDb = await mongoose.connect(MONGODB_URI);
+        const port = app.get("port");
         console.log(`MONGO Connected DB Host: ${connectionDb.connection.host}`)
-        server.listen(app.get("port"), () => {
-            console.log("LISTENING ON PORT 8000")
+
+        server.on("error", (error) => {
+            if (error.code === "EADDRINUSE") {
+                console.error(`Port ${port} is already in use. Stop the other backend process or start this one with PORT=8001.`);
+            } else {
+                console.error("Server error:", error.message);
+            }
+            process.exit(1);
+        });
+
+        server.listen(port, () => {
+            console.log(`LISTENING ON PORT ${port}`)
         });
     } catch (e) {
         console.error("Failed to connect to MongoDB:", e.message);

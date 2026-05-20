@@ -318,6 +318,7 @@ export default function VideoMeetComponent() {
             return;
         }
 
+        
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recog = new SpeechRecognition();
         recog.continuous = true;
@@ -402,13 +403,14 @@ export default function VideoMeetComponent() {
         for (let id in connections) {
             if (id === socketIdRef.current) continue
 
-            connections[id].addStream(window.localStream)
+            const pc = connections[id];
+            pc.addStream(window.localStream)
 
-            connections[id].createOffer().then((description) => {
+            pc.createOffer().then((description) => {
                 console.log(description)
-                connections[id].setLocalDescription(description)
+                pc.setLocalDescription(description)
                     .then(() => {
-                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': pc.localDescription }))
                     })
                     .catch(e => console.log(e))
             })
@@ -428,12 +430,13 @@ export default function VideoMeetComponent() {
             localVideoref.current.srcObject = window.localStream
 
             for (let id in connections) {
-                connections[id].addStream(window.localStream)
+                const pc = connections[id];
+                pc.addStream(window.localStream)
 
-                connections[id].createOffer().then((description) => {
-                    connections[id].setLocalDescription(description)
+                pc.createOffer().then((description) => {
+                    pc.setLocalDescription(description)
                         .then(() => {
-                            socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                            socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': pc.localDescription }))
                         })
                         .catch(e => console.log(e))
                 })
@@ -626,14 +629,15 @@ export default function VideoMeetComponent() {
                     for (let id2 in connections) {
                         if (id2 === socketIdRef.current) continue
 
+                        const pc = connections[id2];
                         try {
-                            connections[id2].addStream(window.localStream)
+                            pc.addStream(window.localStream)
                         } catch (e) { }
 
-                        connections[id2].createOffer().then((description) => {
-                            connections[id2].setLocalDescription(description)
+                        pc.createOffer().then((description) => {
+                            pc.setLocalDescription(description)
                                 .then(() => {
-                                    socketRef.current.emit('signal', id2, JSON.stringify({ 'sdp': connections[id2].localDescription }))
+                                    socketRef.current.emit('signal', id2, JSON.stringify({ 'sdp': pc.localDescription }))
                                 })
                                 .catch(e => console.log(e))
                         })

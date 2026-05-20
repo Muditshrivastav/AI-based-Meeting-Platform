@@ -106,6 +106,23 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
+    const handleGoogleLogin = async (googleAuthPayload) => {
+        try {
+            const request = await client.post("/google", typeof googleAuthPayload === "string"
+                ? { credential: googleAuthPayload }
+                : googleAuthPayload
+            );
+
+            if (request.status === httpStatus.OK) {
+                localStorage.setItem("token", request.data.token);
+                await getUserProfile();
+                router("/home");
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
     const getHistoryOfUser = async () => {
         try {
             let request = await client.get("/get_all_activity", {
@@ -146,6 +163,7 @@ export const AuthProvider = ({ children }) => {
         getHistoryOfUser,
         handleRegister,
         handleLogin,
+        handleGoogleLogin,
         getUserProfile,
         updateUserProfile
     }

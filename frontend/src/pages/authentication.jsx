@@ -1,14 +1,17 @@
 import * as React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
+import Divider from '@mui/material/Divider';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import GoogleIcon from '@mui/icons-material/Google';
 import { AuthContext } from '../contexts/AuthContext';
 import { Snackbar } from '@mui/material';
+
+const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 export default function Authentication() {
 
@@ -22,11 +25,77 @@ export default function Authentication() {
 
 
     const [formState, setFormState] = React.useState(0);
+    const [isGoogleReady, setIsGoogleReady] = React.useState(Boolean(window.google?.accounts?.oauth2));
+    const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
 
     const [open, setOpen] = React.useState(false)
 
 
-    const { handleRegister, handleLogin } = React.useContext(AuthContext);
+    const { handleRegister, handleLogin, handleGoogleLogin } = React.useContext(AuthContext);
+
+    React.useEffect(() => {
+        if (formState !== 0 || isGoogleReady) return;
+
+        const markReady = () => {
+            if (window.google?.accounts?.oauth2) {
+                setIsGoogleReady(true);
+            }
+        };
+
+        if (window.google?.accounts?.oauth2) {
+            setIsGoogleReady(true);
+            return;
+        }
+
+        const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+        if (existingScript) {
+            existingScript.addEventListener("load", markReady, { once: true });
+            return () => existingScript.removeEventListener("load", markReady);
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = markReady;
+        script.onerror = () => setError("Unable to load Google sign-in. Check your internet connection.");
+        document.body.appendChild(script);
+    }, [formState, isGoogleReady]);
+
+    const handleGoogleAuth = () => {
+        if (!googleClientId) {
+            setError("Missing REACT_APP_GOOGLE_CLIENT_ID in the frontend .env file.");
+            return;
+        }
+
+        if (!window.google?.accounts?.oauth2) {
+            setError("Google sign-in is still loading. Please try again in a moment.");
+            return;
+        }
+
+        setIsGoogleLoading(true);
+        setError("");
+
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: googleClientId,
+            scope: "openid email profile",
+            callback: async (response) => {
+                try {
+                    if (response.error) {
+                        throw new Error(response.error_description || response.error);
+                    }
+                    await handleGoogleLogin({ accessToken: response.access_token });
+                } catch (err) {
+                    const message = err.response?.data?.message || err.message || "Google login failed. Please try again.";
+                    setError(message);
+                } finally {
+                    setIsGoogleLoading(false);
+                }
+            }
+        });
+
+        tokenClient.requestAccessToken({ prompt: "select_account" });
+    };
 
     let handleAuth = async () => {
         try {
@@ -46,7 +115,7 @@ export default function Authentication() {
         } catch (err) {
 
             console.log(err);
-            let message = (err.response.data.message);
+            const message = err.response?.data?.message || err.message || "Unable to connect to the backend. Please try again.";
             setError(message);
         }
     }
@@ -131,6 +200,24 @@ export default function Authentication() {
                             >
                                 {formState === 0 ? "Login " : "Register"}
                             </Button>
+
+                            {formState === 0 && (
+                                <>
+                                    <Divider sx={{ my: 2 }}>or</Divider>
+                                    <Button
+                                        fullWidth
+                                        type="button"
+                                        variant="outlined"
+                                        startIcon={<GoogleIcon />}
+                                        onClick={handleGoogleAuth}
+                                        disabled={isGoogleLoading}
+                                        aria-label="Continue with Google"
+                                        sx={{ py: 1.2, textTransform: 'none', fontWeight: 700 }}
+                                    >
+                                        {isGoogleLoading ? "Connecting..." : "Continue with Google"}
+                                    </Button>
+                                </>
+                            )}
 
                         </Box>
                     </Box>
