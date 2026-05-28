@@ -41,6 +41,17 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ limit: "2mb", extended: true }));
 
+app.get("/", (req, res) => {
+    res.json({
+        status: "ok",
+        message: "MeetSpace backend is running. Open the frontend at http://localhost:3000.",
+    });
+});
+
+app.get("/health", (req, res) => {
+    res.json({ status: "ok" });
+});
+
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/agent", agentRoutes);
 
@@ -79,14 +90,21 @@ app.post("/api/v1/summarize", async (req, res) => {
     }
 });
 
-const MONGODB_URI =
-    process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/videomeet";
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error("FATAL: MONGODB_URI environment variable is not set.");
+    process.exit(1);
+}
 
 const start = async () => {
     try {
-        console.log("Connecting to MongoDB...");
+        console.log("Connecting to MongoDB Atlas...");
         const connectionDb = await mongoose.connect(MONGODB_URI, {
-            serverSelectionTimeoutMS: 5000,
+            serverSelectionTimeoutMS: 30000,  // 30s — Atlas cold-start can be slow
+            socketTimeoutMS: 45000,
+            connectTimeoutMS: 30000,
+            maxPoolSize: 10,
         });
         const port = app.get("port");
         console.log(`MONGO Connected DB Host: ${connectionDb.connection.host}`);
@@ -106,9 +124,10 @@ const start = async () => {
             console.log(`LISTENING ON PORT ${port}`);
         });
     } catch (e) {
-        console.error("Failed to connect to MongoDB:", e.message);
+        console.error("Failed to connect to MongoDB Atlas:", e.message);
         process.exit(1);
     }
 };
+
 
 start();

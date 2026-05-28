@@ -1,6 +1,6 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Autocomplete, Avatar, Box, Button, Chip, Divider, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Autocomplete, Avatar, Box, Button, Chip, Divider, IconButton, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
 import ContactPhoneIcon from '@mui/icons-material/ContactPhone';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -16,6 +16,27 @@ import server from '../environment';
 
 
 const getToday = () => new Date().toISOString().split('T')[0];
+
+const formatDateValue = (date) => date.toISOString().split('T')[0];
+
+const padNumber = (value) => value.toString().padStart(2, '0');
+
+const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
+
+const parseDateParts = (dateValue) => {
+    const [year, month, day] = dateValue.split('-').map(Number);
+    return { year, month, day };
+};
+
+const buildDateValue = ({ year, month, day }) => {
+    const safeDay = Math.min(day, daysInMonth(year, month));
+    return `${year}-${padNumber(month)}-${padNumber(safeDay)}`;
+};
+
+const monthOptions = Array.from({ length: 12 }, (_, index) => index + 1);
+const dayOptions = Array.from({ length: 31 }, (_, index) => index + 1);
+const hourOptions = Array.from({ length: 24 }, (_, index) => padNumber(index));
+const minuteOptions = Array.from({ length: 60 }, (_, index) => padNumber(index));
 
 const formatDateTime = (date, time) => {
     if (!date || !time) return '';
@@ -34,6 +55,8 @@ export default function ScheduleMeeting() {
     const [topic, setTopic] = useState('MeetSpace meeting');
     const [date, setDate] = useState(getToday());
     const [time, setTime] = useState('');
+    const [selectedHour, setSelectedHour] = useState('');
+    const [selectedMinute, setSelectedMinute] = useState('');
     const [meetingCode, setMeetingCode] = useState(generateRoomId());
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -47,6 +70,11 @@ export default function ScheduleMeeting() {
 
     const meetingLink = useMemo(() => `${window.location.origin}/meeting/${meetingCode}`, [meetingCode]);
     const scheduledAt = useMemo(() => formatDateTime(date, time), [date, time]);
+    const dateParts = useMemo(() => parseDateParts(date), [date]);
+    const yearOptions = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        return Array.from({ length: 11 }, (_, index) => currentYear + index);
+    }, []);
 
     const savedContacts = useMemo(() => {
         const phones = scheduledMeetings
@@ -54,6 +82,26 @@ export default function ScheduleMeeting() {
             .filter(Boolean);
         return [...new Set(phones)];
     }, [scheduledMeetings]);
+
+    useEffect(() => {
+        const maxDay = daysInMonth(dateParts.year, dateParts.month);
+        if (dateParts.day > maxDay) {
+            setDate(buildDateValue({ ...dateParts, day: maxDay }));
+        }
+    }, [dateParts]);
+
+    const updateDatePart = (part, value) => {
+        setDate(buildDateValue({ ...dateParts, [part]: Number(value) }));
+    };
+
+    const updateTimePart = (part, value) => {
+        const nextHour = part === 'hour' ? value : selectedHour;
+        const nextMinute = part === 'minute' ? value : selectedMinute;
+
+        setSelectedHour(nextHour);
+        setSelectedMinute(nextMinute);
+        setTime(nextHour && nextMinute ? `${nextHour}:${nextMinute}` : '');
+    };
 
     const saveSchedule = () => {
         const scheduledAtIso = new Date(`${date}T${time}`).toISOString();
@@ -287,9 +335,80 @@ export default function ScheduleMeeting() {
                                 />
                             </Stack>
                             <TextField label="Meeting topic" value={topic} onChange={(e) => setTopic(e.target.value)} fullWidth />
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <TextField label="Meeting date" type="date" value={date} onChange={(e) => setDate(e.target.value)} inputProps={{ min: getToday() }} InputLabelProps={{ shrink: true }} fullWidth />
-                                <TextField label="Meeting time" type="time" value={time} onChange={(e) => setTime(e.target.value)} InputLabelProps={{ shrink: true }} fullWidth />
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                                <TextField
+                                    select
+                                    label="Day"
+                                    value={dateParts.day}
+                                    onChange={(e) => updateDatePart('day', e.target.value)}
+                                    fullWidth
+                                >
+                                    {dayOptions.map((dayValue) => (
+                                        <MenuItem key={dayValue} value={dayValue} disabled={dayValue > daysInMonth(dateParts.year, dateParts.month)}>
+                                            {dayValue}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    label="Month"
+                                    value={dateParts.month}
+                                    onChange={(e) => updateDatePart('month', e.target.value)}
+                                    fullWidth
+                                >
+                                    {monthOptions.map((monthValue) => (
+                                        <MenuItem key={monthValue} value={monthValue}>
+                                            {monthValue}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    label="Year"
+                                    value={dateParts.year}
+                                    onChange={(e) => updateDatePart('year', e.target.value)}
+                                    fullWidth
+                                >
+                                    {yearOptions.map((yearValue) => (
+                                        <MenuItem key={yearValue} value={yearValue}>
+                                            {yearValue}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Stack>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                                <TextField
+                                    select
+                                    label="Hour"
+                                    value={selectedHour}
+                                    onChange={(e) => updateTimePart('hour', e.target.value)}
+                                    fullWidth
+                                >
+                                    <MenuItem value="" disabled>
+                                        Select hour
+                                    </MenuItem>
+                                    {hourOptions.map((hourValue) => (
+                                        <MenuItem key={hourValue} value={hourValue}>
+                                            {hourValue}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    label="Minute"
+                                    value={selectedMinute}
+                                    onChange={(e) => updateTimePart('minute', e.target.value)}
+                                    fullWidth
+                                >
+                                    <MenuItem value="" disabled>
+                                        Select minute
+                                    </MenuItem>
+                                    {minuteOptions.map((minuteValue) => (
+                                        <MenuItem key={minuteValue} value={minuteValue}>
+                                            {minuteValue}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
                             </Stack>
                         </Stack>
 

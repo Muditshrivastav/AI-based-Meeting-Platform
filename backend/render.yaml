@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: meetspace-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: npm install
+    startCommand: node src/app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: MONGODB_URI
+        sync: false        # Set this in the Render dashboard — never commit secrets
+      - key: CORS_ORIGIN
+        sync: false        # e.g. https://your-frontend.onrender.com
+      - key: FRONTEND_URL
+        sync: false        # same as your deployed frontend URL
+      - key: CLIENT_URL
+        sync: false        # same as FRONTEND_URL
+      - key: USE_OLLAMA
+        value: "false"     # Ollama is not available on Render free tier
+      - key: GOOGLE_CLIENT_ID
+        sync: false        # only if you use Google OAuth
