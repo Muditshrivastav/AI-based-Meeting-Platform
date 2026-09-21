@@ -6,6 +6,18 @@ let messages = {}
 let timeOnline = {}
 let meta = {} // Store { name, isHost } for each socket.id
 
+const getRoomKey = (pathOrCode) => {
+    if (!pathOrCode) return "";
+
+    try {
+        const parsedUrl = new URL(pathOrCode);
+        const meetingCode = parsedUrl.pathname.split("/").filter(Boolean).pop();
+        return meetingCode || pathOrCode;
+    } catch {
+        return String(pathOrCode).split("?")[0].split("#")[0].split("/").filter(Boolean).pop() || String(pathOrCode);
+    }
+}
+
 export const connectToSocket = (server) => {
     const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000")
         .split(",")
@@ -27,35 +39,36 @@ export const connectToSocket = (server) => {
         console.log("SOMETHING CONNECTED")
 
         socket.on("join-call", (path, name, isHost) => {
+            const roomKey = getRoomKey(path);
 
-            if (connections[path] === undefined) {
-                connections[path] = []
+            if (connections[roomKey] === undefined) {
+                connections[roomKey] = []
             }
-            if (!connections[path].includes(socket.id)) {
-                connections[path].push(socket.id)
+            if (!connections[roomKey].includes(socket.id)) {
+                connections[roomKey].push(socket.id)
             }
 
             timeOnline[socket.id] = new Date();
             meta[socket.id] = { name: name || "Guest", isHost: !!isHost };
 
-            for (let a = 0; a < connections[path].length; a++) {
-                const targetId = connections[path][a];
+            for (let a = 0; a < connections[roomKey].length; a++) {
+                const targetId = connections[roomKey][a];
                 
                 // For everyone in the room:
                 // Send the metadata of all participants in the room
-                const participantsMeta = connections[path].map(id => ({
+                const participantsMeta = connections[roomKey].map(id => ({
                     socketId: id,
                     name: meta[id]?.name || "Guest",
                     isHost: meta[id]?.isHost || false
                 }));
 
-                io.to(targetId).emit("user-joined", socket.id, connections[path], participantsMeta);
+                io.to(targetId).emit("user-joined", socket.id, connections[roomKey], participantsMeta);
             }
 
-            if (messages[path] !== undefined) {
-                for (let a = 0; a < messages[path].length; ++a) {
-                    io.to(socket.id).emit("chat-message", messages[path][a]['data'],
-                        messages[path][a]['sender'], messages[path][a]['socket-id-sender'])
+            if (messages[roomKey] !== undefined) {
+                for (let a = 0; a < messages[roomKey].length; ++a) {
+                    io.to(socket.id).emit("chat-message", messages[roomKey][a]['data'],
+                        messages[roomKey][a]['sender'], messages[roomKey][a]['socket-id-sender'])
                 }
             }
 

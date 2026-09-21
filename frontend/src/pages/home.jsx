@@ -51,9 +51,11 @@ function HomeComponent() {
 
         try {
             const url = new URL(input);
-            return url.pathname.replace(/^\/+/, '').split('/')[0];
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            return pathParts[0] === 'meeting' ? pathParts[1] || '' : pathParts[0] || '';
         } catch {
-            return input.replace(/^\/+/, '').split('/')[0];
+            const pathParts = input.split('?')[0].split('#')[0].split('/').filter(Boolean);
+            return pathParts[0] === 'meeting' ? pathParts[1] || '' : pathParts[0] || '';
         }
     }
 

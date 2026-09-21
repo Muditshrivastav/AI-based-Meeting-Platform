@@ -97,9 +97,24 @@ if (!MONGODB_URI) {
     process.exit(1);
 }
 
+const getMongoTarget = (uri) => {
+    const withoutCredentials = uri.replace(/\/\/[^@]+@/, "//");
+    const match = withoutCredentials.match(/^mongodb(?:\+srv)?:\/\/([^/?]+)/);
+    return match?.[1] || "unknown";
+};
+
+const mongoTarget = getMongoTarget(MONGODB_URI);
+
+if (mongoTarget.includes("127.0.0.1") || mongoTarget.includes("localhost")) {
+    console.error(
+        "FATAL: MONGODB_URI is pointing to local MongoDB. Set Render's MONGODB_URI env var to your MongoDB Atlas connection string."
+    );
+    process.exit(1);
+}
+
 const start = async () => {
     try {
-        console.log("Connecting to MongoDB Atlas...");
+        console.log(`Connecting to MongoDB Atlas (${mongoTarget})...`);
         const connectionDb = await mongoose.connect(MONGODB_URI, {
             serverSelectionTimeoutMS: 30000,  // 30s — Atlas cold-start can be slow
             socketTimeoutMS: 45000,

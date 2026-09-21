@@ -42,6 +42,7 @@ export default function VideoMeetComponent() {
     const location = useLocation();
     const [meetingAccess, setMeetingAccess] = useState({ status: 'checking' });
     const [isHost, setIsHost] = useState(location.state?.isHost || false);
+    const isHostRef = useRef(location.state?.isHost || false);
     const profileImageRef = useRef(null);
 
     let [videoAvailable, setVideoAvailable] = useState(true);
@@ -116,6 +117,7 @@ export default function VideoMeetComponent() {
                 // Also check host status if it's a scheduled meeting
                 if (access.scheduled && access.createdBy && profile?.username) {
                     if (access.createdBy === profile.username) {
+                        isHostRef.current = true;
                         setIsHost(true);
                     }
                 }
@@ -532,7 +534,7 @@ export default function VideoMeetComponent() {
         socketRef.current.on('transcription-chunk', addTranscription)
 
         socketRef.current.on('connect', () => {
-            socketRef.current.emit('join-call', window.location.href, usernameRef.current, isHost)
+            socketRef.current.emit('join-call', meetingCode, usernameRef.current, isHostRef.current)
             socketIdRef.current = socketRef.current.id
             setVideos((videos) => {
                 const filteredVideos = videos.filter((video) => video.socketId !== socketIdRef.current);
