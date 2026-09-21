@@ -17,8 +17,6 @@ import server from '../environment';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
-const formatDateValue = (date) => date.toISOString().split('T')[0];
-
 const padNumber = (value) => value.toString().padStart(2, '0');
 
 const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
